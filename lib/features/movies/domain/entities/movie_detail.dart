@@ -11,6 +11,7 @@ class MovieDetail {
   final int? runtime;
   final List<Genre> genres;
   final String? tagline;
+  final String? logoPath;
 
   const MovieDetail({
     required this.id,
@@ -23,6 +24,7 @@ class MovieDetail {
     this.runtime,
     required this.genres,
     this.tagline,
+    this.logoPath,
   });
 
   String get fullPosterPath => posterPath != null
@@ -31,5 +33,9 @@ class MovieDetail {
 
   String get fullBackdropPath => backdropPath != null
       ? 'https://image.tmdb.org/t/p/w1280$backdropPath'
+      : '';
+
+  String get fullLogoPath => logoPath != null
+      ? 'https://image.tmdb.org/t/p/w500$logoPath'
       : '';
 }

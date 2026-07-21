@@ -7,6 +7,7 @@ class LocalStorage {
 
   static const _apiKeyKey = 'tmdb_api_key';
   static const _favoritesKey = 'favorite_movie_ids';
+  static const _tvFavoritesKey = 'favorite_tv_show_ids';
   static const _sessionIdKey = 'tmdb_session_id';
   static const _usernameKey = 'tmdb_username';
   static const _accountIdKey = 'tmdb_account_id';
@@ -82,5 +83,35 @@ class LocalStorage {
 
   bool isFavorite(String id) {
     return getFavorites().contains(id);
+  }
+
+  // --- TV Show Favorites ---
+
+  List<String> getTvFavorites() {
+    return _prefs.getStringList(_tvFavoritesKey) ?? [];
+  }
+
+  Future<void> saveTvFavorites(List<String> ids) async {
+    await _prefs.setStringList(_tvFavoritesKey, ids);
+  }
+
+  Future<void> addTvFavorite(String id) async {
+    final favorites = getTvFavorites();
+    if (!favorites.contains(id)) {
+      favorites.add(id);
+      await saveTvFavorites(favorites);
+    }
+  }
+
+  Future<void> removeTvFavorite(String id) async {
+    final favorites = getTvFavorites();
+    if (favorites.contains(id)) {
+      favorites.remove(id);
+      await saveTvFavorites(favorites);
+    }
+  }
+
+  bool isTvFavorite(String id) {
+    return getTvFavorites().contains(id);
   }
 }

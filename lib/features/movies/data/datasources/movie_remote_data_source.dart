@@ -38,7 +38,13 @@ class MovieRemoteDataSourceImpl implements MovieRemoteDataSource {
 
   @override
   Future<MovieDetailModel> getMovieDetails(int id) async {
-    final response = await _apiClient.dio.get('/movie/$id');
+    final response = await _apiClient.dio.get(
+      '/movie/$id',
+      queryParameters: {
+        'append_to_response': 'images',
+        'include_image_language': 'en,null',
+      },
+    );
     return MovieDetailModel.fromJson(response.data as Map<String, dynamic>);
   }
 

@@ -13,9 +13,22 @@ class MovieDetailModel extends MovieDetail {
     super.runtime,
     required super.genres,
     super.tagline,
+    super.logoPath,
   });
 
   factory MovieDetailModel.fromJson(Map<String, dynamic> json) {
+    String? logo;
+    if (json['images'] != null && json['images']['logos'] != null) {
+      final logos = json['images']['logos'] as List<dynamic>;
+      if (logos.isNotEmpty) {
+        final enLogo = logos.firstWhere(
+          (l) => l['iso_639_1'] == 'en',
+          orElse: () => logos.first,
+        );
+        logo = enLogo['file_path'] as String?;
+      }
+    }
+
     return MovieDetailModel(
       id: json['id'] as int,
       title: json['title'] as String? ?? '',
@@ -30,6 +43,7 @@ class MovieDetailModel extends MovieDetail {
               .toList() ??
           [],
       tagline: json['tagline'] as String?,
+      logoPath: logo,
     );
   }
 
@@ -45,6 +59,7 @@ class MovieDetailModel extends MovieDetail {
       'runtime': runtime,
       'genres': genres.map((g) => (g as GenreModel).toJson()).toList(),
       'tagline': tagline,
+      'logo_path': logoPath,
     };
   }
 }

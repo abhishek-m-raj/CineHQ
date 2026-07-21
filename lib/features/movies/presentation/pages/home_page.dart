@@ -7,8 +7,14 @@ import '../../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../blocs/movies_bloc.dart';
 import '../cubits/movies_list_state.dart';
-import '../widgets/movie_hero_banner.dart';
+import '../widgets/movie_spotlights.dart';
 import '../widgets/movie_horizontal_list.dart';
+
+// TV Shows imports
+import '../../../tv_shows/presentation/blocs/tv_shows_bloc.dart';
+import '../../../tv_shows/presentation/cubits/tv_shows_list_state.dart';
+import '../../../tv_shows/presentation/widgets/tv_show_spotlights.dart';
+import '../../../tv_shows/presentation/widgets/tv_show_horizontal_list.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,12 +25,16 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final MoviesBloc _moviesBloc;
+  late final TVShowsBloc _tvShowsBloc;
+  bool _isMoviesActive = true;
 
   @override
   void initState() {
     super.initState();
     _moviesBloc = sl<MoviesBloc>();
+    _tvShowsBloc = sl<TVShowsBloc>();
 
+    // Load Movies
     if (_moviesBloc.state.nowPlayingState is MoviesListInitial) {
       _moviesBloc.add(const LoadNowPlayingMoviesEvent());
     }
@@ -34,12 +44,29 @@ class _HomePageState extends State<HomePage> {
     if (_moviesBloc.state.topRatedState is MoviesListInitial) {
       _moviesBloc.add(const LoadTopRatedMoviesEvent());
     }
+
+    // Load TV Shows
+    if (_tvShowsBloc.state.airingTodayState is TVShowsListInitial) {
+      _tvShowsBloc.add(const LoadAiringTodayTVShowsEvent());
+    }
+    if (_tvShowsBloc.state.popularState is TVShowsListInitial) {
+      _tvShowsBloc.add(const LoadPopularTVShowsEvent());
+    }
+    if (_tvShowsBloc.state.topRatedState is TVShowsListInitial) {
+      _tvShowsBloc.add(const LoadTopRatedTVShowsEvent());
+    }
   }
 
   Future<void> _onRefresh() async {
-    _moviesBloc.add(const LoadNowPlayingMoviesEvent());
-    _moviesBloc.add(const LoadPopularMoviesEvent());
-    _moviesBloc.add(const LoadTopRatedMoviesEvent());
+    if (_isMoviesActive) {
+      _moviesBloc.add(const LoadNowPlayingMoviesEvent());
+      _moviesBloc.add(const LoadPopularMoviesEvent());
+      _moviesBloc.add(const LoadTopRatedMoviesEvent());
+    } else {
+      _tvShowsBloc.add(const LoadAiringTodayTVShowsEvent());
+      _tvShowsBloc.add(const LoadPopularTVShowsEvent());
+      _tvShowsBloc.add(const LoadTopRatedTVShowsEvent());
+    }
     
     // Allow standard delay
     await Future.delayed(const Duration(milliseconds: 300));
@@ -53,13 +80,55 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'CINEHQ.',
-          style: theme.textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w900,
-            fontSize: 22,
-            letterSpacing: 1.2,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'CINEHQ',
+              style: theme.textTheme.headlineLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(width: 12),
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _isMoviesActive = !_isMoviesActive;
+                });
+              },
+              borderRadius: BorderRadius.circular(4),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  border: Border.all(color: theme.colorScheme.primary, width: 1),
+                  borderRadius: BorderRadius.circular(4),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _isMoviesActive ? 'MOVIES' : 'SERIES',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.swap_horiz,
+                      size: 14,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
         actions: [
           if (isMock)
@@ -94,110 +163,157 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              // Featured Section
-              BlocBuilder<MoviesBloc, MoviesState>(
-                bloc: _moviesBloc,
-                buildWhen: (previous, current) => previous.nowPlayingState != current.nowPlayingState,
-                builder: (context, state) {
-                  final nowPlayingState = state.nowPlayingState;
-                  if (nowPlayingState is MoviesListLoading) {
-                    return _buildHeroSkeleton(theme);
-                  } else if (nowPlayingState is MoviesListLoaded) {
-                    final movies = nowPlayingState.movies;
-                    if (movies.isEmpty) return const SizedBox.shrink();
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Text(
-                            'FEATURED',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 200,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: movies.length,
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            physics: const BouncingScrollPhysics(),
-                            itemBuilder: (context, index) {
-                              final movie = movies[index];
-                              return MovieHeroBanner(
-                                movie: movie,
-                                onTap: () => context.push('/movie/${movie.id}'),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    );
-                  } else if (nowPlayingState is MoviesListError) {
-                    return _buildErrorWidget(theme, nowPlayingState.message, () {
-                      _moviesBloc.add(const LoadNowPlayingMoviesEvent());
-                    });
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-              const SizedBox(height: 32),
-              // Popular Section
-              BlocBuilder<MoviesBloc, MoviesState>(
-                bloc: _moviesBloc,
-                buildWhen: (previous, current) => previous.popularState != current.popularState,
-                builder: (context, state) {
-                  final popularState = state.popularState;
-                  if (popularState is MoviesListLoading) {
-                    return const MovieHorizontalListSkeleton(title: 'POPULAR');
-                  } else if (popularState is MoviesListLoaded) {
-                    return MovieHorizontalList(
-                      movies: popularState.movies,
-                      title: 'POPULAR',
-                      onMovieTap: (movie) => context.push('/movie/${movie.id}'),
-                    );
-                  } else if (popularState is MoviesListError) {
-                    return _buildErrorWidget(theme, popularState.message, () {
-                      _moviesBloc.add(const LoadPopularMoviesEvent());
-                    });
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-              const SizedBox(height: 32),
-              // Top Rated Section
-              BlocBuilder<MoviesBloc, MoviesState>(
-                bloc: _moviesBloc,
-                buildWhen: (previous, current) => previous.topRatedState != current.topRatedState,
-                builder: (context, state) {
-                  final topRatedState = state.topRatedState;
-                  if (topRatedState is MoviesListLoading) {
-                    return const MovieHorizontalListSkeleton(title: 'TOP RATED');
-                  } else if (topRatedState is MoviesListLoaded) {
-                    return MovieHorizontalList(
-                      movies: topRatedState.movies,
-                      title: 'TOP RATED',
-                      onMovieTap: (movie) => context.push('/movie/${movie.id}'),
-                    );
-                  } else if (topRatedState is MoviesListError) {
-                    return _buildErrorWidget(theme, topRatedState.message, () {
-                      _moviesBloc.add(const LoadTopRatedMoviesEvent());
-                    });
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-              const SizedBox(height: 32),
+              // Conditional Display depending on selection
+              if (_isMoviesActive) ..._buildMoviesContent(theme) else ..._buildTVShowsContent(theme),
             ],
           ),
         ),
       ),
     );
+  }
+
+  List<Widget> _buildMoviesContent(ThemeData theme) {
+    return [
+      // Featured Section
+      BlocBuilder<MoviesBloc, MoviesState>(
+        bloc: _moviesBloc,
+        buildWhen: (previous, current) => previous.nowPlayingState != current.nowPlayingState,
+        builder: (context, state) {
+          final nowPlayingState = state.nowPlayingState;
+          if (nowPlayingState is MoviesListLoading) {
+            return _buildHeroSkeleton(theme);
+          } else if (nowPlayingState is MoviesListLoaded) {
+            final movies = nowPlayingState.movies;
+            if (movies.isEmpty) return const SizedBox.shrink();
+            return MovieSpotlights(movies: movies.take(10).toList());
+          } else if (nowPlayingState is MoviesListError) {
+            return _buildErrorWidget(theme, nowPlayingState.message, () {
+              _moviesBloc.add(const LoadNowPlayingMoviesEvent());
+            });
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      const SizedBox(height: 32),
+      // Popular Section
+      BlocBuilder<MoviesBloc, MoviesState>(
+        bloc: _moviesBloc,
+        buildWhen: (previous, current) => previous.popularState != current.popularState,
+        builder: (context, state) {
+          final popularState = state.popularState;
+          if (popularState is MoviesListLoading) {
+            return const MovieHorizontalListSkeleton(title: 'POPULAR MOVIES');
+          } else if (popularState is MoviesListLoaded) {
+            return MovieHorizontalList(
+              movies: popularState.movies,
+              title: 'POPULAR MOVIES',
+              onMovieTap: (movie) => context.push('/movie/${movie.id}'),
+            );
+          } else if (popularState is MoviesListError) {
+            return _buildErrorWidget(theme, popularState.message, () {
+              _moviesBloc.add(const LoadPopularMoviesEvent());
+            });
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      const SizedBox(height: 32),
+      // Top Rated Section
+      BlocBuilder<MoviesBloc, MoviesState>(
+        bloc: _moviesBloc,
+        buildWhen: (previous, current) => previous.topRatedState != current.topRatedState,
+        builder: (context, state) {
+          final topRatedState = state.topRatedState;
+          if (topRatedState is MoviesListLoading) {
+            return const MovieHorizontalListSkeleton(title: 'TOP RATED MOVIES');
+          } else if (topRatedState is MoviesListLoaded) {
+            return MovieHorizontalList(
+              movies: topRatedState.movies,
+              title: 'TOP RATED MOVIES',
+              onMovieTap: (movie) => context.push('/movie/${movie.id}'),
+            );
+          } else if (topRatedState is MoviesListError) {
+            return _buildErrorWidget(theme, topRatedState.message, () {
+              _moviesBloc.add(const LoadTopRatedMoviesEvent());
+            });
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      const SizedBox(height: 32),
+    ];
+  }
+
+  List<Widget> _buildTVShowsContent(ThemeData theme) {
+    return [
+      // Featured TV Shows
+      BlocBuilder<TVShowsBloc, TVShowsState>(
+        bloc: _tvShowsBloc,
+        buildWhen: (previous, current) => previous.airingTodayState != current.airingTodayState,
+        builder: (context, state) {
+          final airingTodayState = state.airingTodayState;
+          if (airingTodayState is TVShowsListLoading) {
+            return _buildHeroSkeleton(theme);
+          } else if (airingTodayState is TVShowsListLoaded) {
+            final tvShows = airingTodayState.tvShows;
+            if (tvShows.isEmpty) return const SizedBox.shrink();
+            return TVShowSpotlights(tvShows: tvShows.take(10).toList());
+          } else if (airingTodayState is TVShowsListError) {
+            return _buildErrorWidget(theme, airingTodayState.message, () {
+              _tvShowsBloc.add(const LoadAiringTodayTVShowsEvent());
+            });
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      const SizedBox(height: 32),
+      // Popular TV Shows
+      BlocBuilder<TVShowsBloc, TVShowsState>(
+        bloc: _tvShowsBloc,
+        buildWhen: (previous, current) => previous.popularState != current.popularState,
+        builder: (context, state) {
+          final popularState = state.popularState;
+          if (popularState is TVShowsListLoading) {
+            return const TVShowHorizontalListSkeleton(title: 'POPULAR TV SHOWS');
+          } else if (popularState is TVShowsListLoaded) {
+            return TVShowHorizontalList(
+              tvShows: popularState.tvShows,
+              title: 'POPULAR TV SHOWS',
+              onTVShowTap: (tvShow) => context.push('/tv/${tvShow.id}'),
+            );
+          } else if (popularState is TVShowsListError) {
+            return _buildErrorWidget(theme, popularState.message, () {
+              _tvShowsBloc.add(const LoadPopularTVShowsEvent());
+            });
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      const SizedBox(height: 32),
+      // Top Rated TV Shows
+      BlocBuilder<TVShowsBloc, TVShowsState>(
+        bloc: _tvShowsBloc,
+        buildWhen: (previous, current) => previous.topRatedState != current.topRatedState,
+        builder: (context, state) {
+          final topRatedState = state.topRatedState;
+          if (topRatedState is TVShowsListLoading) {
+            return const TVShowHorizontalListSkeleton(title: 'TOP RATED TV SHOWS');
+          } else if (topRatedState is TVShowsListLoaded) {
+            return TVShowHorizontalList(
+              tvShows: topRatedState.tvShows,
+              title: 'TOP RATED TV SHOWS',
+              onTVShowTap: (tvShow) => context.push('/tv/${tvShow.id}'),
+            );
+          } else if (topRatedState is TVShowsListError) {
+            return _buildErrorWidget(theme, topRatedState.message, () {
+              _tvShowsBloc.add(const LoadTopRatedTVShowsEvent());
+            });
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      const SizedBox(height: 32),
+    ];
   }
 
   Widget _buildHeroSkeleton(ThemeData theme) {

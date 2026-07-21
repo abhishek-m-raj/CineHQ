@@ -1,30 +1,38 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:cinehq/main.dart';
+import 'package:cinehq/core/di/service_locator.dart' as di;
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  setUp(() async {
+    // Mock shared preferences channel
+    SharedPreferences.setMockInitialValues({});
+
+    // Load mock env values for tests
+    dotenv.testLoad(fileInput: 'TMDB_API_KEY=');
+    
+    // Initialize dependency injection
+    await di.init();
+  });
+
+  tearDown(() async {
+    await di.sl.reset();
+  });
+
+  testWidgets('App renders main navigation layout smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
+    await tester.pump(); // Pump initial frame
+    await tester.pump(const Duration(milliseconds: 600)); // Allow mock timer delay
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the title "CINEHQ." is displayed
+    expect(find.text('CINEHQ.'), findsOneWidget);
+    // Verify that the navigation tabs exist
+    expect(find.text('EXPLORE'), findsOneWidget);
+    expect(find.text('SEARCH'), findsOneWidget);
+    expect(find.text('FAVORITES'), findsOneWidget);
+    expect(find.text('SETTINGS'), findsOneWidget);
   });
 }

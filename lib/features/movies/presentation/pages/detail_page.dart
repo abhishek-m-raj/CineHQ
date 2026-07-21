@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cineui/cineui.dart';
 
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
@@ -11,10 +11,7 @@ import '../cubits/favorites_cubit.dart';
 class DetailPage extends StatefulWidget {
   final int movieId;
 
-  const DetailPage({
-    super.key,
-    required this.movieId,
-  });
+  const DetailPage({super.key, required this.movieId});
 
   @override
   State<DetailPage> createState() => _DetailPageState();
@@ -54,7 +51,8 @@ class _DetailPageState extends State<DetailPage> {
             return const _DetailLoadingWidget();
           } else if (state is MovieDetailLoaded) {
             final movie = state.movie;
-            final year = movie.releaseDate != null && movie.releaseDate!.length >= 4
+            final year =
+                movie.releaseDate != null && movie.releaseDate!.length >= 4
                 ? movie.releaseDate!.substring(0, 4)
                 : '—';
 
@@ -98,7 +96,9 @@ class _DetailPageState extends State<DetailPage> {
                                 : Colors.white.withValues(alpha: 0.8),
                             child: IconButton(
                               icon: Icon(
-                                isFavorite ? Icons.favorite_sharp : Icons.favorite_border_sharp,
+                                isFavorite
+                                    ? Icons.favorite_sharp
+                                    : Icons.favorite_border_sharp,
                                 color: theme.colorScheme.primary,
                                 size: 20,
                               ),
@@ -112,26 +112,28 @@ class _DetailPageState extends State<DetailPage> {
                     ),
                   ],
                   flexibleSpace: FlexibleSpaceBar(
-                    stretchModes: const [
-                      StretchMode.zoomBackground,
-                    ],
+                    stretchModes: const [StretchMode.zoomBackground],
                     background: Stack(
                       fit: StackFit.expand,
                       children: [
-                        movie.backdropPath != null && movie.backdropPath!.isNotEmpty
+                        movie.backdropPath != null &&
+                                movie.backdropPath!.isNotEmpty
                             ? CachedNetworkImage(
                                 imageUrl: movie.fullBackdropPath,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => const ShimmerLoading(
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                ),
+                                placeholder: (context, url) =>
+                                    const ShimmerLoading(
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                    ),
                                 errorWidget: (context, url, error) => Container(
-                                  color: theme.colorScheme.surfaceContainerHighest,
+                                  color:
+                                      theme.colorScheme.surfaceContainerHighest,
                                 ),
                               )
                             : Container(
-                                color: theme.colorScheme.surfaceContainerHighest,
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
                               ),
                         // Gradient overlay for visual aesthetics
                         Positioned.fill(
@@ -142,7 +144,9 @@ class _DetailPageState extends State<DetailPage> {
                                 end: Alignment.bottomCenter,
                                 colors: [
                                   Colors.transparent,
-                                  theme.scaffoldBackgroundColor.withValues(alpha: 0.2),
+                                  theme.scaffoldBackgroundColor.withValues(
+                                    alpha: 0.2,
+                                  ),
                                   theme.scaffoldBackgroundColor,
                                 ],
                                 stops: const [0.4, 0.7, 1.0],
@@ -174,20 +178,38 @@ class _DetailPageState extends State<DetailPage> {
                               ),
                             ),
                           ),
-                        Text(
-                          movie.title,
-                          style: theme.textTheme.displayLarge?.copyWith(
-                            fontSize: 26,
-                            letterSpacing: -0.6,
+                        if (movie.fullLogoPath.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: CineImage.cachedNetwork(
+                              showLoading: false,
+                              src: movie.fullLogoPath,
+                              height: 80,
+                              fit: BoxFit.contain,
+                              alignment: Alignment.centerLeft,
+                            ),
+                          )
+                        else
+                          Text(
+                            movie.title,
+                            style: theme.textTheme.displayLarge?.copyWith(
+                              fontSize: 26,
+                              letterSpacing: -0.6,
+                            ),
                           ),
-                        ),
                         const SizedBox(height: 14),
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                border: Border.all(color: theme.colorScheme.primary, width: 1),
+                                border: Border.all(
+                                  color: theme.colorScheme.primary,
+                                  width: 1,
+                                ),
                                 borderRadius: BorderRadius.circular(2),
                               ),
                               child: Text(
@@ -232,6 +254,20 @@ class _DetailPageState extends State<DetailPage> {
                             ),
                           ],
                         ),
+                        CinePrimaryBtn(
+                          height: 52,
+                          text: 'WATCH MOVIE',
+                          icon: CineIcons.play,
+                          onTap: () {
+                            final title = Uri.encodeComponent(movie.title);
+                            final releaseDate = Uri.encodeComponent(
+                              movie.releaseDate ?? '',
+                            );
+                            context.push(
+                              '/play/movie/${movie.id}?title=$title&releaseDate=$releaseDate',
+                            );
+                          },
+                        ),
                         const SizedBox(height: 20),
                         const Divider(),
                         const SizedBox(height: 20),
@@ -245,11 +281,15 @@ class _DetailPageState extends State<DetailPage> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          movie.overview.isNotEmpty ? movie.overview : 'No synopsis is currently available.',
+                          movie.overview.isNotEmpty
+                              ? movie.overview
+                              : 'No synopsis is currently available.',
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontSize: 14,
                             height: 1.6,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.85,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -268,9 +308,14 @@ class _DetailPageState extends State<DetailPage> {
                             runSpacing: 8,
                             children: movie.genres.map((genre) {
                               return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: theme.colorScheme.outline),
+                                  border: Border.all(
+                                    color: theme.colorScheme.outline,
+                                  ),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -363,7 +408,11 @@ class _DetailLoadingWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const ShimmerLoading(width: double.infinity, height: 300, borderRadius: 0),
+          const ShimmerLoading(
+            width: double.infinity,
+            height: 300,
+            borderRadius: 0,
+          ),
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -375,11 +424,23 @@ class _DetailLoadingWidget extends StatelessWidget {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    const ShimmerLoading(width: 40, height: 16, borderRadius: 2),
+                    const ShimmerLoading(
+                      width: 40,
+                      height: 16,
+                      borderRadius: 2,
+                    ),
                     _buildDot(theme),
-                    const ShimmerLoading(width: 60, height: 16, borderRadius: 2),
+                    const ShimmerLoading(
+                      width: 60,
+                      height: 16,
+                      borderRadius: 2,
+                    ),
                     _buildDot(theme),
-                    const ShimmerLoading(width: 50, height: 16, borderRadius: 2),
+                    const ShimmerLoading(
+                      width: 50,
+                      height: 16,
+                      borderRadius: 2,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -387,9 +448,17 @@ class _DetailLoadingWidget extends StatelessWidget {
                 const SizedBox(height: 20),
                 const ShimmerLoading(width: 80, height: 14, borderRadius: 2),
                 const SizedBox(height: 12),
-                const ShimmerLoading(width: double.infinity, height: 14, borderRadius: 2),
+                const ShimmerLoading(
+                  width: double.infinity,
+                  height: 14,
+                  borderRadius: 2,
+                ),
                 const SizedBox(height: 8),
-                const ShimmerLoading(width: double.infinity, height: 14, borderRadius: 2),
+                const ShimmerLoading(
+                  width: double.infinity,
+                  height: 14,
+                  borderRadius: 2,
+                ),
                 const SizedBox(height: 8),
                 const ShimmerLoading(width: 200, height: 14, borderRadius: 2),
                 const SizedBox(height: 24),
@@ -400,7 +469,11 @@ class _DetailLoadingWidget extends StatelessWidget {
                     3,
                     (index) => const Padding(
                       padding: EdgeInsets.only(right: 8.0),
-                      child: ShimmerLoading(width: 70, height: 24, borderRadius: 4),
+                      child: ShimmerLoading(
+                        width: 70,
+                        height: 24,
+                        borderRadius: 4,
+                      ),
                     ),
                   ),
                 ),

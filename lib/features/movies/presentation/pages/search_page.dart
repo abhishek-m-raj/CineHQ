@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cineui/cineui.dart';
 
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../blocs/movies_bloc.dart';
 import '../widgets/movie_card.dart';
+
+// TV Shows imports
+import '../../../tv_shows/presentation/blocs/tv_shows_bloc.dart';
+import '../../../tv_shows/presentation/widgets/tv_show_card.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -17,13 +22,17 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   late final MoviesBloc _moviesBloc;
+  late final TVShowsBloc _tvShowsBloc;
+  bool _isMoviesActive = true;
 
   @override
   void initState() {
     super.initState();
     _moviesBloc = sl<MoviesBloc>();
+    _tvShowsBloc = sl<TVShowsBloc>();
     _searchController.text = '';
     _moviesBloc.add(const ClearSearchEvent());
+    _tvShowsBloc.add(const ClearTVShowSearchEvent());
   }
 
   @override
@@ -32,7 +41,7 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
-  final List<String> _suggestions = const [
+  final List<String> _movieSuggestions = const [
     'Inception',
     'Dark Knight',
     'Godfather',
@@ -40,6 +49,33 @@ class _SearchPageState extends State<SearchPage> {
     'Interstellar',
     'Whiplash',
   ];
+
+  final List<String> _tvShowSuggestions = const [
+    'Breaking Bad',
+    'Stranger Things',
+    'Game of Thrones',
+    'Chernobyl',
+    'Last of Us',
+    'The Bear',
+  ];
+
+  void _onSearchChanged(String val) {
+    if (_isMoviesActive) {
+      _moviesBloc.add(SearchMoviesEvent(val));
+    } else {
+      _tvShowsBloc.add(SearchTVShowsEvent(val));
+    }
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    if (_isMoviesActive) {
+      _moviesBloc.add(const ClearSearchEvent());
+    } else {
+      _tvShowsBloc.add(const ClearTVShowSearchEvent());
+    }
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,109 +94,196 @@ class _SearchPageState extends State<SearchPage> {
       ),
       body: Column(
         children: [
-          // Search Input Field
+          // Movie vs TV Show toggle
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: theme.colorScheme.outline),
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (val) {
-                  _moviesBloc.add(SearchMoviesEvent(val));
-                },
-                decoration: InputDecoration(
-                  hintText: 'Search movies...',
-                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.secondary,
-                  ),
-                  prefixIcon: Icon(Icons.search_sharp, color: theme.colorScheme.primary),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(Icons.clear_sharp, color: theme.colorScheme.primary),
-                          onPressed: () {
-                            _searchController.clear();
-                            _moviesBloc.add(const ClearSearchEvent());
-                            setState(() {});
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                ),
-                style: theme.textTheme.bodyLarge,
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+            child: Row(
+              children: [
+                _buildToggleButton(context, 'MOVIES', _isMoviesActive, () {
+                  if (!_isMoviesActive) {
+                    setState(() {
+                      _isMoviesActive = true;
+                    });
+                    _clearSearch();
+                  }
+                }),
+                const SizedBox(width: 10),
+                _buildToggleButton(context, 'TV SHOWS', !_isMoviesActive, () {
+                  if (_isMoviesActive) {
+                    setState(() {
+                      _isMoviesActive = false;
+                    });
+                    _clearSearch();
+                  }
+                }),
+              ],
             ),
           ),
+
+          // Search Input Field
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: CineSpacing.s4,
+              vertical: CineSpacing.s2,
+            ),
+            child: CineTextField(
+              controller: _searchController,
+              onChange: (val) {
+                _onSearchChanged(val);
+                setState(() {});
+              },
+              hintText: _isMoviesActive ? 'Search movies...' : 'Search TV shows...',
+              icon: CineIcons.search,
+            ),
+          ),
+
           // Search results or Suggestions
           Expanded(
-            child: BlocBuilder<MoviesBloc, MoviesState>(
-              bloc: _moviesBloc,
-              buildWhen: (previous, current) => previous.searchState != current.searchState,
-              builder: (context, state) {
-                final searchState = state.searchState;
-                if (searchState is MovieSearchInitial) {
-                  return _buildSuggestions(theme);
-                } else if (searchState is MovieSearchLoading) {
-                  return _buildGridSkeleton(theme);
-                } else if (searchState is MovieSearchLoaded) {
-                  final movies = searchState.movies;
-                  if (movies.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'NO RESULTS FOUND',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.secondary,
-                          fontSize: 11,
-                          letterSpacing: 1.0,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    );
-                  }
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    physics: const BouncingScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 2 / 3.2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: movies.length,
-                    itemBuilder: (context, index) {
-                      final movie = movies[index];
-                      return MovieCard(
-                        movie: movie,
-                        onTap: () => context.push('/movie/${movie.id}'),
-                      );
-                    },
-                  );
-                } else if (searchState is MovieSearchError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Text(
-                        searchState.message,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
+            child: _isMoviesActive ? _buildMoviesSearchBody(theme) : _buildTVShowsSearchBody(theme),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSuggestions(ThemeData theme) {
+  Widget _buildToggleButton(BuildContext context, String text, bool isActive, VoidCallback onTap) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? theme.colorScheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: isActive ? theme.colorScheme.primary : theme.colorScheme.outline,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          text,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: isActive ? theme.colorScheme.onPrimary : theme.colorScheme.secondary,
+            fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
+            fontSize: 11,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoviesSearchBody(ThemeData theme) {
+    return BlocBuilder<MoviesBloc, MoviesState>(
+      bloc: _moviesBloc,
+      buildWhen: (previous, current) => previous.searchState != current.searchState,
+      builder: (context, state) {
+        final searchState = state.searchState;
+        if (searchState is MovieSearchInitial) {
+          return _buildSuggestions(theme, _movieSuggestions);
+        } else if (searchState is MovieSearchLoading) {
+          return _buildGridSkeleton(theme);
+        } else if (searchState is MovieSearchLoaded) {
+          final movies = searchState.movies;
+          if (movies.isEmpty) {
+            return _buildNoResults(theme);
+          }
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            physics: const BouncingScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 2 / 3.2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: movies.length,
+            itemBuilder: (context, index) {
+              final movie = movies[index];
+              return MovieCard(
+                movie: movie,
+                onTap: () => context.push('/movie/${movie.id}'),
+              );
+            },
+          );
+        } else if (searchState is MovieSearchError) {
+          return _buildError(theme, searchState.message);
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildTVShowsSearchBody(ThemeData theme) {
+    return BlocBuilder<TVShowsBloc, TVShowsState>(
+      bloc: _tvShowsBloc,
+      buildWhen: (previous, current) => previous.searchState != current.searchState,
+      builder: (context, state) {
+        final searchState = state.searchState;
+        if (searchState is TVShowSearchInitial) {
+          return _buildSuggestions(theme, _tvShowSuggestions);
+        } else if (searchState is TVShowSearchLoading) {
+          return _buildGridSkeleton(theme);
+        } else if (searchState is TVShowSearchLoaded) {
+          final tvShows = searchState.tvShows;
+          if (tvShows.isEmpty) {
+            return _buildNoResults(theme);
+          }
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            physics: const BouncingScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 2 / 3.2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: tvShows.length,
+            itemBuilder: (context, index) {
+              final tvShow = tvShows[index];
+              return TVShowCard(
+                tvShow: tvShow,
+                onTap: () => context.push('/tv/${tvShow.id}'),
+              );
+            },
+          );
+        } else if (searchState is TVShowSearchError) {
+          return _buildError(theme, searchState.message);
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildNoResults(ThemeData theme) {
+    return Center(
+      child: Text(
+        'NO RESULTS FOUND',
+        style: theme.textTheme.titleMedium?.copyWith(
+          color: theme.colorScheme.secondary,
+          fontSize: 11,
+          letterSpacing: 1.0,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildError(ThemeData theme, String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestions(ThemeData theme, List<String> suggestions) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
@@ -177,7 +300,9 @@ class _SearchPageState extends State<SearchPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Discover black and white classics, award-winning dramas, and modern space epics.',
+            _isMoviesActive
+                ? 'Discover black and white classics, award-winning dramas, and modern space epics.'
+                : 'Discover binge-worthy series, critically acclaimed television, and classic shows.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
           ),
@@ -186,12 +311,12 @@ class _SearchPageState extends State<SearchPage> {
             spacing: 8,
             runSpacing: 8,
             alignment: WrapAlignment.center,
-            children: _suggestions.map((s) {
+            children: suggestions.map((s) {
               return ActionChip(
                 label: Text(s.toUpperCase()),
                 onPressed: () {
                   _searchController.text = s;
-                  _moviesBloc.add(SearchMoviesEvent(s));
+                  _onSearchChanged(s);
                   setState(() {});
                 },
                 backgroundColor: theme.colorScheme.surface,

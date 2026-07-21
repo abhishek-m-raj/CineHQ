@@ -1,7 +1,10 @@
+import 'package:device/device.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:talker_flutter/talker_flutter.dart';
+import 'package:media_kit/media_kit.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -11,31 +14,53 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_cubit.dart';
 
+final shortcuts = {
+  if (Device.isTv) ...{
+    if (Device.isDesktop)
+      LogicalKeySet(LogicalKeyboardKey.enter): const ActivateIntent(),
+    LogicalKeySet(LogicalKeyboardKey.select): const ActivateIntent(),
+    LogicalKeySet(LogicalKeyboardKey.arrowLeft): const DirectionalFocusIntent(
+      TraversalDirection.left,
+    ),
+    LogicalKeySet(LogicalKeyboardKey.arrowRight): const DirectionalFocusIntent(
+      TraversalDirection.right,
+    ),
+    LogicalKeySet(LogicalKeyboardKey.arrowDown): const DirectionalFocusIntent(
+      TraversalDirection.down,
+    ),
+    LogicalKeySet(LogicalKeyboardKey.arrowUp): const DirectionalFocusIntent(
+      TraversalDirection.up,
+    ),
+  },
+};
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+  Device.ensureInitialized(debugTvMode: true);
+  MediaKit.ensureInitialized();
+
   // Load environment variables
   await dotenv.load(fileName: ".env");
-  
+
   // Initialize Dependency Injection container
   await di.init();
-  
+
   final talker = di.sl<Talker>();
-  
+
   // Set Talker Bloc Observer
   Bloc.observer = TalkerBlocObserver(talker);
-  
+
   // Handle Flutter errors
   FlutterError.onError = (details) {
     talker.handle(details.exception, details.stack);
   };
-  
+
   // Handle platform/Dart asynchronous errors
   PlatformDispatcher.instance.onError = (error, stack) {
     talker.handle(error, stack);
     return true;
   };
-  
+
   runApp(const MyApp());
 }
 
@@ -55,6 +80,7 @@ class MyApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: themeMode,
             routerConfig: goRouter,
+            shortcuts: shortcuts,
           );
         },
       ),
