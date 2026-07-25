@@ -34,6 +34,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   VideoController? controller;
   final scraper = sl<VidkingScraper>();
 
+  static const Map<String, String> _playerHeaders = {
+    'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Referer': 'https://www.vidking.net/',
+    'Origin': 'https://www.vidking.net',
+  };
+
   bool _isLoading = true;
   String _loadingStatus = 'Initializing player...';
   String? _errorMessage;
@@ -106,7 +113,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       controller = VideoController(player);
 
       await player.open(
-        Media(_videoUrl!),
+        Media(_videoUrl!, httpHeaders: _playerHeaders),
       );
 
       // Auto-load English subtitle if available
@@ -291,7 +298,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                             _videoUrl = url;
                           });
                           await player.open(
-                            Media(url),
+                            Media(url, httpHeaders: _playerHeaders),
                           );
                           // Seek back to previous position to resume
                           await player.seek(currentPosition);
