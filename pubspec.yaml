@@ -93,6 +93,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
   flutter_native_splash: ^2.4.4
+  inno_bundle: ^0.11.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -194,3 +195,11 @@ flutter_native_splash:
     icon_background_color_dark: "#000000"
 
   web: false
+
+inno_bundle:
+  id: eb7ef8c3-1bdb-4baa-89c9-3e591a23b3c1
+  name: CineHQ
+  description: "A new Flutter project."
+  publisher: cinehq
+  arch: x64
+  admin: auto

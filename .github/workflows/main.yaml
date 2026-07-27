@@ -1,0 +1,321 @@
+name: Build and Release WeebHQ
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: read
+
+env:
+  FLUTTER_VERSION: "3.44.6"
+  ZSIGN_VERSION: "0.7"
+
+jobs:
+  detect-prerelease:
+    runs-on: ubuntu-latest
+    outputs:
+      is_prerelease: ${{ steps.check.outputs.is_prerelease }}
+    steps:
+      - id: check
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$TAG" == *-* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-android:
+    needs: detect-prerelease
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Create .env file
+        run: |
+          echo "TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" > .env
+
+      - name: Free Disk Space (Ubuntu)
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "adopt"
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache CMake
+        uses: actions/cache@v3
+        with:
+          path: ~/cmake
+          key: cmake-3.18.1-linux-x64
+
+      - name: Setup Android
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          if [ ! -d "$HOME/cmake/cmake-3.18.1-Linux-x86_64" ]; then
+            mkdir -p $HOME/cmake && cd $HOME/cmake
+            wget -q https://github.com/Kitware/CMake/releases/download/v3.18.1/cmake-3.18.1-Linux-x86_64.tar.gz
+            tar -xzf cmake-3.18.1-Linux-x86_64.tar.gz
+          fi
+          cd "$GITHUB_WORKSPACE"
+          CMAKE_DIR="$HOME/cmake/cmake-3.18.1-Linux-x86_64"
+          echo "cmake.dir=$CMAKE_DIR" >> android/local.properties
+          mkdir -p android
+
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "ERROR: KEYSTORE_BASE64 secret is not set"
+            exit 1
+          fi
+
+          echo "Decoding keystore..."
+          echo "$KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to decode KEYSTORE_BASE64"
+            exit 1
+          fi
+
+          if [ ! -f android/upload-keystore.jks ]; then
+            echo "ERROR: Keystore file not found after decode"
+            ls -la android || true
+            exit 1
+          fi
+
+          echo "Keystore created:" && ls -lh android/upload-keystore.jks || true
+
+          cat > android/key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=$GITHUB_WORKSPACE/android/upload-keystore.jks
+          EOF
+
+          echo "key.properties (masked):"
+          echo "storePassword=****"
+          echo "keyPassword=****"
+          grep '^keyAlias=' android/key.properties || true
+          grep '^storeFile=' android/key.properties || true
+
+      - name: Build Android
+        run: |
+          flutter build apk --split-per-abi
+          flutter build apk --release
+
+          cd build/app/outputs/flutter-apk
+          mv app-armeabi-v7a-release.apk WeebHQ-Android-armeabi-v7a.apk
+          mv app-arm64-v8a-release.apk WeebHQ-Android-arm64-v8a.apk
+          mv app-x86_64-release.apk WeebHQ-Android-x86_64.apk
+          mv app-release.apk WeebHQ-Android-universal.apk
+
+          cd "$GITHUB_WORKSPACE"
+          flutter build appbundle --release
+
+          cd build/app/outputs/bundle/release
+          mv app-release.aab WeebHQ-Android.aab
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-all
+          path: |
+            build/app/outputs/flutter-apk/WeebHQ-Android-*.apk
+            build/app/outputs/bundle/release/WeebHQ-Android.aab
+      - name: Release Android Builds
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: |
+            build/app/outputs/flutter-apk/WeebHQ-Android-*.apk
+            build/app/outputs/bundle/release/WeebHQ-Android.aab
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          tag: ${{ github.ref_name }}
+          prerelease: ${{ needs.detect-prerelease.outputs.is_prerelease == 'true' }}
+
+  build-linux:
+    needs: detect-prerelease
+    runs-on: ubuntu-latest
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Create .env file
+        run: |
+          echo "TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" > .env
+
+      - name: Free Disk Space (Ubuntu)
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libasound2-dev libwebkit2gtk-4.1-dev \
+            libmpv-dev libepoxy-dev \
+            dpkg-dev fakeroot \
+            rpm patchelf \
+            libarchive-tools
+          sudo ln -sf \
+            /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc \
+            /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
+
+      - name: Install appimagetool
+        run: |
+          wget -q "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
+            -O /tmp/appimagetool
+          chmod +x /tmp/appimagetool
+          sudo mv /tmp/appimagetool /usr/local/bin/appimagetool
+
+      - name: Activate flutter_distributor
+        run: |
+          dart pub global activate flutter_distributor
+          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+
+      - name: Get Dependencies
+        run: flutter pub get
+
+      - name: Build Linux packages
+        run: |
+          flutter_distributor package --platform linux --targets deb,appimage,pacman,rpm
+          bash linux/packaging/pacman/fix-pacman.sh
+
+      - name: Collect artifacts
+        run: |
+          find dist -name "*.deb" | head -1 | xargs -I{} cp {} WeebHQ-Linux.deb
+          find dist -name "*.AppImage" | head -1 | xargs -I{} cp {} WeebHQ-Linux.AppImage
+          find dist -name "*.pacman" | head -1 | xargs -I{} cp {} WeebHQ-Linux.pacman
+          find dist ~/rpmbuild/RPMS -name "*.rpm" 2>/dev/null | head -1 | xargs -I{} cp {} WeebHQ-Linux.rpm
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-all
+          path: |
+            WeebHQ-Linux.deb
+            WeebHQ-Linux.AppImage
+            WeebHQ-Linux.pacman
+            WeebHQ-Linux.rpm
+
+      - name: Release Linux Builds
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: |
+            WeebHQ-Linux.deb,
+            WeebHQ-Linux.AppImage,
+            WeebHQ-Linux.pacman,
+            WeebHQ-Linux.rpm
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          tag: ${{ github.ref_name }}
+          prerelease: ${{ needs.detect-prerelease.outputs.is_prerelease == 'true' }}
+
+  build-windows:
+    needs: detect-prerelease
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Create .env file
+        shell: pwsh
+        run: |
+          Set-Content -Path .env -Value "TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}"
+
+      - name: Setup CMake 3.30.5
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: "3.30.5"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Get Dependencies
+        run: flutter pub get
+
+      - name: Failsafe Patch for zikzak_inappwebview
+        shell: pwsh
+        run: |
+          $packageConfig = ".dart_tool\package_config.json"
+          if (Test-Path $packageConfig) {
+              $json = Get-Content $packageConfig -Raw | ConvertFrom-Json
+              $pkg = $json.packages | Where-Object { $_.name -eq 'zikzak_inappwebview_windows' }
+              if ($pkg) {
+                  $pkgDir = $pkg.rootUri -replace '^file:///', ''
+                  $pkgDir = [System.Uri]::UnescapeDataString($pkgDir)
+                  $pkgDir = $pkgDir -replace '/', '\'
+
+                  New-Item -ItemType Directory -Force "$pkgDir\windows" | Out-Null
+                  $lines = @(
+                      'cmake_minimum_required(VERSION 3.14)',
+                      'project(zikzak_inappwebview_windows_library CXX)',
+                      'set(PLUGIN_NAME "zikzak_inappwebview_windows_plugin")',
+                      'add_library(${PLUGIN_NAME} INTERFACE)',
+                      'set(${PLUGIN_NAME}_bundled_libraries "" PARENT_SCOPE)'
+                  )
+                  $lines | Set-Content "$pkgDir\windows\CMakeLists.txt"
+                  Write-Host "✅ Brute-force patched zikzak in CI!"
+              }
+          }
+
+      - name: Build Windows
+        run: dart run inno_bundle:build --release
+
+      - name: Create ZIP file for Windows Build
+        run: |
+          cd build/windows/x64/runner/Release
+          Compress-Archive -Path * -DestinationPath WeebHQ-Windows.zip
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts
+          path: |
+            build/windows/x64/runner/Release/WeebHQ-Windows.zip
+            build/windows/x64/installer/Release/WeebHQ-x86_64-*-Installer.exe
+          if-no-files-found: error
+
+      - name: Release Windows Builds
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: |
+            build/windows/x64/runner/Release/WeebHQ-Windows.zip,
+            build/windows/x64/installer/Release/WeebHQ-x86_64-*-Installer.exe
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          tag: ${{ github.ref_name }}
+          prerelease: ${{ needs.detect-prerelease.outputs.is_prerelease == 'true' }}
