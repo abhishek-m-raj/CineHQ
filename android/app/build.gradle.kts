@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.cinehq"
+    namespace = "com.cinehq.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,11 +15,10 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.cinehq"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        applicationId = "com.cinehq.app"
+        // Android TV requires API level 21 minimum.
+        // Use max() to ensure we never go below 21 even if flutter.minSdkVersion is lower.
+        minSdk = maxOf(flutter.minSdkVersion, 21)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
