@@ -20,8 +20,9 @@ class BackBtn extends StatelessWidget {
         if (Device.isTv) {
           if (controller.isFullscreen) {
             controller.exFullscreen();
+          } else {
+            controller.onBack();
           }
-          controller.onBack();
         } else {
           Navigator.of(context).maybePop();
         }

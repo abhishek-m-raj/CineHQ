@@ -32,8 +32,9 @@ class VideoPopScope extends StatelessWidget {
               } else {
                 if (controller.isFullscreen) {
                   controller.exFullscreen();
+                } else {
+                  controller.onBack();
                 }
-                controller.onBack();
               }
             }
           },

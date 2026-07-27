@@ -127,6 +127,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       _loadTVShowEpisodes(_currentSeason);
     }
 
+    if (Device.isMobile) {
+      vidController.enFullscreen();
+    }
+
     _startScrapingAndPlay();
   }
 
@@ -458,6 +462,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     _saveCurrentProgress();
     _positionSub?.cancel();
     _completedSub?.cancel();
+    if (vidController.isFullscreen) {
+      vidController.exFullscreen();
+    }
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     vidController.dispose();
     vidController.player.dispose();
