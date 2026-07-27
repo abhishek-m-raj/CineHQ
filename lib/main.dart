@@ -40,7 +40,7 @@ final shortcuts = {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Device.ensureInitialized();
+  Device.ensureInitialized(debugTvMode: true);
   MediaKit.ensureInitialized();
 
   await Video.initialize({

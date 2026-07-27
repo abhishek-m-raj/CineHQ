@@ -32,14 +32,18 @@ class VideoStreams {
     ];
   }
 
+  final StreamController<bool> isLoadingController = StreamController.broadcast();
+
   void dispose() {
     for (final i in subs) {
       i.cancel();
     }
+    isLoadingController.close();
   }
 
   Stream<bool> get onCompleted => _completedController.stream;
   Stream<Datasource?> get onVideoLoaded => videoLoadedController.stream;
   Stream<bool> get onFullscreen => fullscreenController.stream;
   Stream<bool> get isControlsVisble => isControlsVisbleController.stream;
+  Stream<bool> get onLoadingChanged => isLoadingController.stream;
 }

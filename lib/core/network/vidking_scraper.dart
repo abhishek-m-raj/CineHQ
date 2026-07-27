@@ -196,27 +196,35 @@ class VidkingScraper {
       'Connection': 'keep-alive',
     };
 
-    // 1. Fetch seed from speedracelight.com
+    // 1. Fetch seed from speedracelight.com with retry
     final seedUrl = 'https://api.speedracelight.com/seed?mediaId=$tmdbId';
-    String seed;
+    String seed = '';
     talker.info("VidkingScraper: Requesting decryption seed for TMDB $tmdbId");
-    try {
-      final seedResponse = await _dio.get<Map<String, dynamic>>(
-        seedUrl,
-        options: Options(
-          headers: customHeaders,
-          sendTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 5),
-        ),
-      );
-      seed = seedResponse.data?['seed'] as String? ?? '';
-      if (seed.isEmpty) {
-        throw Exception("Empty seed string returned");
+    for (int attempt = 1; attempt <= 2; attempt++) {
+      try {
+        final seedResponse = await _dio.get<Map<String, dynamic>>(
+          seedUrl,
+          options: Options(
+            headers: customHeaders,
+            sendTimeout: const Duration(seconds: 10),
+            receiveTimeout: const Duration(seconds: 10),
+          ),
+        );
+        seed = seedResponse.data?['seed'] as String? ?? '';
+        if (seed.isNotEmpty) {
+          talker.info("VidkingScraper: Successfully fetched seed ($seed) on attempt $attempt");
+          break;
+        }
+      } catch (e) {
+        talker.warning("VidkingScraper: Failed to fetch seed (attempt $attempt): $e");
+        if (attempt == 2) {
+          throw Exception("Failed to retrieve decryption seed from server. $e");
+        }
+        await Future.delayed(const Duration(milliseconds: 500));
       }
-      talker.info("VidkingScraper: Successfully fetched seed ($seed)");
-    } catch (e) {
-      talker.error("VidkingScraper: Failed to fetch seed: $e");
-      throw Exception("Failed to retrieve decryption seed from server. $e");
+    }
+    if (seed.isEmpty) {
+      throw Exception("Empty seed string returned from server.");
     }
 
     // 2. Fetch from servers concurrently

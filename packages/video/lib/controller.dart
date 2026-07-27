@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:video/player/player.dart';
 import 'package:vibration/vibration.dart';
+import 'package:video/models/episode_data.dart';
 import 'package:video/models/chapter.dart';
 import 'package:video/models/datasource.dart';
 import 'package:video/models/streams.dart';
@@ -42,6 +43,7 @@ class Controller {
   late final GlobalKey<State<StatefulWidget>> key;
   late final FocusNode playBtnFocusNode;
   Datasource? datasource;
+  bool isLoading = false;
   bool isTimestampSkipping = false;
   bool isControlsVisble = true;
   bool isFastForwarding = false;
@@ -61,6 +63,50 @@ class Controller {
   String? coverImg;
   Uint8List? thumbnailVtt;
   String? thumbnailVttBaseUrl;
+
+  EpisodeData? episodeData;
+  final StreamController<EpisodeData?> _episodeDataController = StreamController<EpisodeData?>.broadcast();
+  Stream<EpisodeData?> get onEpisodeDataChanged => _episodeDataController.stream;
+
+  void setVideoInfo({
+    String? title,
+    String? subtitle,
+    String? coverImg,
+    bool? loading,
+  }) {
+    if (coverImg != null && coverImg.isNotEmpty) {
+      this.coverImg = coverImg;
+    }
+    if (loading != null) {
+      isLoading = loading;
+      streams.isLoadingController.add(loading);
+    }
+    if (title != null || subtitle != null || coverImg != null) {
+      if (datasource == null) {
+        datasource = SingleDatasource(
+          title: title ?? '',
+          subtitle: subtitle ?? '',
+          url: '',
+          coverImg: coverImg ?? this.coverImg,
+        );
+      } else {
+        datasource = SingleDatasource(
+          title: title ?? datasource!.title,
+          subtitle: subtitle ?? datasource!.subtitle,
+          url: (datasource is SingleDatasource) ? (datasource as SingleDatasource).url : '',
+          headers: datasource?.headers,
+          tracks: datasource?.tracks ?? [],
+          coverImg: coverImg ?? datasource?.coverImg ?? this.coverImg,
+        );
+      }
+      streams.videoLoadedController.add(datasource);
+    }
+  }
+
+  void setEpisodeData(EpisodeData? data) {
+    episodeData = data;
+    _episodeDataController.add(data);
+  }
 
   void init() async {
     key = GlobalKey<State<StatefulWidget>>();
@@ -97,6 +143,7 @@ class Controller {
     }
     _posSub?.cancel();
     _packageSubtitleStreamController.close();
+    _episodeDataController.close();
     playBtnFocusNode.dispose();
     volume.dispose();
     fitController.close();
@@ -286,21 +333,47 @@ class Controller {
   Future<void> loadVideo({required Datasource data, Duration? startTime}) async {
     try {
       datasource = data;
+      if (data.coverImg != null && data.coverImg!.isNotEmpty) {
+        coverImg = data.coverImg;
+      }
       streams.videoLoadedController.add(datasource);
+
       if (data is SingleDatasource) {
         log.i("loading single datasource: ${data.url} headers=${data.headers?.entries.toList()}");
         await player.open(data.url, headers: data.headers, play: Device.isWeb ? false : settings.autoPlay);
         _setTracks();
       } else if (data is MultiDatasource) {
         log.i("loading multi datasource video");
-        final int? targetKey = data.links.containsKey(quality) ? quality : (data.links.isNotEmpty ? data.links.keys.first : null);
-        if (targetKey != null && data.links[targetKey] != null) {
-          quality = targetKey;
-          await player.open(
-            data.links[targetKey]!,
-            headers: data.headers,
-            play: Device.isWeb ? false : settings.autoPlay,
-          );
+        final List<int> preferredOrder = [];
+        if (quality != null && data.links.containsKey(quality)) {
+          preferredOrder.add(quality!);
+        }
+        for (final k in data.links.keys) {
+          if (!preferredOrder.contains(k)) preferredOrder.add(k);
+        }
+
+        bool opened = false;
+        Object? lastErr;
+        for (final qKey in preferredOrder) {
+          final link = data.links[qKey];
+          if (link == null || link.isEmpty) continue;
+          try {
+            quality = qKey;
+            log.i("Attempting link for quality $qKey: $link");
+            await player.open(
+              link,
+              headers: data.headers,
+              play: Device.isWeb ? false : settings.autoPlay,
+            );
+            opened = true;
+            break;
+          } catch (err) {
+            lastErr = err;
+            log.e("Failed to open multi-datasource link quality $qKey ($link): $err");
+          }
+        }
+        if (!opened) {
+          throw lastErr ?? Exception("Failed to open any quality link in multi-datasource.");
         }
         _setTracks();
       } else if (data is FileDatasource) {
@@ -313,9 +386,14 @@ class Controller {
       if (Device.isWeb && settings.autoPlay) {
         await player.play();
       }
+      isLoading = false;
+      streams.isLoadingController.add(false);
     } catch (e) {
       datasource = null;
-      log.e(e);
+      isLoading = false;
+      streams.isLoadingController.add(false);
+      log.e("loadVideo error: $e");
+      rethrow;
     }
   }
 

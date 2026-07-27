@@ -12,13 +12,22 @@ class LoadingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
-      child: StreamBuilder(
-        stream: controller.player.stream.buffering,
-        builder: (context, snapshot) {
-          final String? img = controller.coverImg ?? controller.datasource?.coverImg;
-          final bool isCoverLoading = (controller.player.state.duration == Duration.zero && img != null);
-          final bool buffering = snapshot.data ?? false;
-          return LoadingIndicator(style: style, buffering: buffering || isCoverLoading);
+      child: StreamBuilder<bool>(
+        stream: controller.streams.onLoadingChanged,
+        builder: (context, loadingSnap) {
+          return StreamBuilder<bool>(
+            stream: controller.player.stream.buffering,
+            builder: (context, snapshot) {
+              final String? img = controller.coverImg ?? controller.datasource?.coverImg;
+              final bool isCoverLoading = (controller.player.state.position == Duration.zero && img != null);
+              final bool buffering = snapshot.data ?? false;
+              final bool isLoading = controller.isLoading;
+              return LoadingIndicator(
+                style: style,
+                buffering: buffering || (isCoverLoading && isLoading) || isLoading,
+              );
+            },
+          );
         },
       ),
     );

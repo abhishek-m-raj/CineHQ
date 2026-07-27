@@ -403,13 +403,16 @@ class _DetailPageState extends State<DetailPage> {
                       height: 52,
                       text: 'WATCH MOVIE',
                       icon: CineIcons.play,
+                      focusNode: _watchButtonFocusNode,
                       scrollTillTop: true,
                       onTap: () {
                         final title = Uri.encodeComponent(movie.title);
                         final releaseDate =
                             Uri.encodeComponent(movie.releaseDate ?? '');
+                        final posterPath = Uri.encodeComponent(movie.posterPath ?? '');
+                        final backdropPath = Uri.encodeComponent(movie.backdropPath ?? '');
                         context.push(
-                          '/play/movie/${movie.id}?title=$title&releaseDate=$releaseDate',
+                          '/play/movie/${movie.id}?title=$title&releaseDate=$releaseDate&posterPath=$posterPath&backdropPath=$backdropPath',
                         );
                       },
                     ).animate().fadeIn(delay: 250.ms),
@@ -608,8 +611,10 @@ class _DetailPageState extends State<DetailPage> {
                                     Uri.encodeComponent(movie.title);
                                 final releaseDate = Uri.encodeComponent(
                                     movie.releaseDate ?? '');
+                                final posterPath = Uri.encodeComponent(movie.posterPath ?? '');
+                                final backdropPath = Uri.encodeComponent(movie.backdropPath ?? '');
                                 context.push(
-                                  '/play/movie/${movie.id}?title=$title&releaseDate=$releaseDate',
+                                  '/play/movie/${movie.id}?title=$title&releaseDate=$releaseDate&posterPath=$posterPath&backdropPath=$backdropPath',
                                 );
                               },
                             ),
@@ -678,39 +683,74 @@ class _DetailLoadingWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTvOrDesktop = Device.isTv || screenWidth > 900;
+
+    if (isTvOrDesktop) {
+      return _buildLargeScreenSkeleton(context, theme);
+    } else {
+      return _buildMobileSkeleton(context, theme);
+    }
+  }
+
+  Widget _buildMobileSkeleton(BuildContext context, ThemeData theme) {
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const ShimmerLoading(
-              width: double.infinity, height: 300, borderRadius: 0),
+          Stack(
+            children: [
+              const ShimmerLoading(
+                width: double.infinity,
+                height: 280,
+                borderRadius: 0,
+              ),
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        theme.scaffoldBackgroundColor.withValues(alpha: 0.2),
+                        theme.scaffoldBackgroundColor,
+                      ],
+                      stops: const [0.4, 0.75, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 8,
+                left: 12,
+                child: _buildBackButtonSkeleton(theme),
+              ),
+            ],
+          ),
           Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const ShimmerLoading(width: 120, height: 12, borderRadius: 2),
+                const ShimmerLoading(width: 220, height: 32, borderRadius: 6),
                 const SizedBox(height: 12),
-                const ShimmerLoading(width: 250, height: 28, borderRadius: 2),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const ShimmerLoading(
-                        width: 40, height: 16, borderRadius: 2),
-                    _dot(theme),
-                    const ShimmerLoading(
-                        width: 60, height: 16, borderRadius: 2),
-                    _dot(theme),
-                    const ShimmerLoading(
-                        width: 50, height: 16, borderRadius: 2),
-                  ],
+                _buildMetadataRowSkeleton(theme),
+                const SizedBox(height: 12),
+                const ShimmerLoading(width: 140, height: 12, borderRadius: 2),
+                const SizedBox(height: 20),
+                const ShimmerLoading(
+                  width: double.infinity,
+                  height: 52,
+                  borderRadius: 12,
                 ),
                 const SizedBox(height: 20),
-                const Divider(),
+                const Divider(height: 1),
                 const SizedBox(height: 20),
-                const ShimmerLoading(width: 80, height: 14, borderRadius: 2),
-                const SizedBox(height: 12),
+                _sectionHeadingSkeleton(theme, width: 80),
+                const SizedBox(height: 10),
                 const ShimmerLoading(
                     width: double.infinity, height: 14, borderRadius: 2),
                 const SizedBox(height: 8),
@@ -719,7 +759,7 @@ class _DetailLoadingWidget extends StatelessWidget {
                 const SizedBox(height: 8),
                 const ShimmerLoading(width: 200, height: 14, borderRadius: 2),
                 const SizedBox(height: 24),
-                const ShimmerLoading(width: 80, height: 14, borderRadius: 2),
+                _sectionHeadingSkeleton(theme, width: 70),
                 const SizedBox(height: 12),
                 Row(
                   children: List.generate(
@@ -727,29 +767,180 @@ class _DetailLoadingWidget extends StatelessWidget {
                     (i) => const Padding(
                       padding: EdgeInsets.only(right: 8.0),
                       child: ShimmerLoading(
-                          width: 70, height: 24, borderRadius: 4),
+                          width: 75, height: 26, borderRadius: 16),
                     ),
                   ),
                 ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
+          const MovieHorizontalListSkeleton(title: 'RECOMMENDATIONS'),
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
 
-  static Widget _dot(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-      child: Container(
-        width: 3,
-        height: 3,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.outline,
-          shape: BoxShape.circle,
+  Widget _buildLargeScreenSkeleton(BuildContext context, ThemeData theme) {
+    final sw = MediaQuery.of(context).size.width;
+    final sh = MediaQuery.of(context).size.height;
+    final mediaQueryPadding = MediaQuery.of(context).padding;
+    final contentWidth = (sw * 0.50).clamp(320.0, 720.0);
+    final firstFoldHeight =
+        (sh - mediaQueryPadding.top - mediaQueryPadding.bottom)
+            .clamp(550.0, 1400.0);
+
+    return Stack(
+      children: [
+        const Positioned.fill(
+          child: ShimmerLoading(
+            width: double.infinity,
+            height: double.infinity,
+            borderRadius: 0,
+          ),
         ),
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  theme.scaffoldBackgroundColor,
+                  theme.scaffoldBackgroundColor,
+                  theme.scaffoldBackgroundColor.withValues(alpha: 0.90),
+                  theme.scaffoldBackgroundColor.withValues(alpha: 0.0),
+                ],
+                stops: const [0.0, 0.38, 0.56, 0.84],
+              ),
+            ),
+          ),
+        ),
+        SafeArea(
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: firstFoldHeight,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(48.0, 24.0, 48.0, 40.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildBackButtonSkeleton(theme),
+                        const Spacer(),
+                        ShimmerLoading(
+                          width: contentWidth * 0.75,
+                          height: 48,
+                          borderRadius: 8,
+                        ),
+                        const SizedBox(height: 18),
+                        _buildMetadataRowSkeleton(theme),
+                        const SizedBox(height: 14),
+                        const ShimmerLoading(
+                            width: 140, height: 12, borderRadius: 2),
+                        const SizedBox(height: 24),
+                        ShimmerLoading(
+                          width: contentWidth.clamp(0.0, 400.0),
+                          height: 54,
+                          borderRadius: 12,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 48.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 16),
+                      _sectionHeadingSkeleton(theme, width: 80),
+                      const SizedBox(height: 10),
+                      ShimmerLoading(
+                          width: contentWidth, height: 14, borderRadius: 2),
+                      const SizedBox(height: 8),
+                      ShimmerLoading(
+                          width: contentWidth, height: 14, borderRadius: 2),
+                      const SizedBox(height: 8),
+                      ShimmerLoading(
+                          width: contentWidth * 0.6,
+                          height: 14,
+                          borderRadius: 2),
+                      const SizedBox(height: 28),
+                      _sectionHeadingSkeleton(theme, width: 70),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: List.generate(
+                          3,
+                          (i) => const Padding(
+                            padding: EdgeInsets.only(right: 8.0),
+                            child: ShimmerLoading(
+                                width: 80, height: 26, borderRadius: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                    ],
+                  ),
+                ),
+                const MovieHorizontalListSkeleton(
+                  title: 'RECOMMENDATIONS',
+                  padding: EdgeInsets.symmetric(horizontal: 48.0),
+                ),
+                const SizedBox(height: 48),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBackButtonSkeleton(ThemeData theme) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        shape: BoxShape.circle,
       ),
+      child: const Center(
+        child: ShimmerLoading(width: 20, height: 20, borderRadius: 10),
+      ),
+    );
+  }
+
+  Widget _buildMetadataRowSkeleton(ThemeData theme) {
+    return Row(
+      children: const [
+        ShimmerLoading(width: 55, height: 24, borderRadius: 6),
+        SizedBox(width: 8),
+        ShimmerLoading(width: 65, height: 24, borderRadius: 6),
+        SizedBox(width: 8),
+        ShimmerLoading(width: 75, height: 24, borderRadius: 6),
+      ],
+    );
+  }
+
+  Widget _sectionHeadingSkeleton(ThemeData theme, {required double width}) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 16,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        ShimmerLoading(width: width, height: 14, borderRadius: 2),
+      ],
     );
   }
 }

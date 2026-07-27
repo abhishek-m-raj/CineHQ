@@ -14,6 +14,7 @@ import '../widgets/btns/mute_btn.dart';
 import '../widgets/btns/skip_btn.dart';
 import '../widgets/seekBar/seek_bar.dart';
 import '../widgets/btns/settings/settings_btn.dart';
+import '../widgets/btns/episodes_btn.dart';
 
 class BottomControlsOverlay extends StatelessWidget {
   final Controller controller;
@@ -118,6 +119,7 @@ class _BottomRow extends StatelessWidget {
             children: [
               SkipBtn(controller: controller),
               SizedBox(width: HqSpacing.s1),
+              EpisodesBtn(controller: controller, style: style),
               ...extraBtns,
               FitBtn(controller: controller, style: style),
               MuteBtn(controller: controller, style: style),
@@ -125,7 +127,13 @@ class _BottomRow extends StatelessWidget {
               if (showFullScreenBtn) FullScreenBtn(controller: controller, style: style),
             ],
           ),
-        if (style.playerMode == VidPlayerMode.mobile) SkipBtn(controller: controller),
+        if (style.playerMode == VidPlayerMode.mobile)
+          Row(
+            children: [
+              EpisodesBtn(controller: controller, style: style),
+              SkipBtn(controller: controller),
+            ],
+          ),
       ],
     );
   }

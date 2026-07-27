@@ -129,6 +129,7 @@ class VideoUIState extends State<VideoUI> {
               ),
               LoadingOverlay(controller: widget.controller, style: widget.style),
               SettingsOverlay(controller: widget.controller, style: widget.style),
+              EpisodesOverlay(controller: widget.controller, style: widget.style),
               ...widget.extraOverlays,
             ],
           ),

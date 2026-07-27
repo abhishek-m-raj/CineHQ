@@ -1,79 +1,81 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class MediaTypeSwitcher extends StatefulWidget {
+class MediaTypeSwitcher extends StatelessWidget {
   final bool isMoviesActive;
   final ValueChanged<bool> onChanged;
-  final FocusNode? focusNode;
 
   const MediaTypeSwitcher({
     super.key,
     required this.isMoviesActive,
     required this.onChanged,
-    this.focusNode,
   });
 
   @override
-  State<MediaTypeSwitcher> createState() => _MediaTypeSwitcherState();
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _MediaTypeTabTile(
+          label: 'MOVIES',
+          isSelected: isMoviesActive,
+          onTap: () {
+            if (!isMoviesActive) {
+              onChanged(true);
+            }
+          },
+        ),
+        const SizedBox(width: 6),
+        _MediaTypeTabTile(
+          label: 'SERIES',
+          isSelected: !isMoviesActive,
+          onTap: () {
+            if (isMoviesActive) {
+              onChanged(false);
+            }
+          },
+        ),
+      ],
+    );
+  }
 }
 
-class _MediaTypeSwitcherState extends State<MediaTypeSwitcher> {
-  late FocusNode _focusNode;
-  bool _isInternalFocusNode = false;
+class _MediaTypeTabTile extends StatefulWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _MediaTypeTabTile({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  State<_MediaTypeTabTile> createState() => _MediaTypeTabTileState();
+}
+
+class _MediaTypeTabTileState extends State<_MediaTypeTabTile> {
+  late final FocusNode _focusNode;
   bool _isFocused = false;
   bool _isHovered = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.focusNode != null) {
-      _focusNode = widget.focusNode!;
-      _isInternalFocusNode = false;
-    } else {
-      _focusNode = FocusNode(debugLabel: 'MediaTypeSwitcher');
-      _isInternalFocusNode = true;
-    }
-    _focusNode.addListener(_handleFocusChange);
-  }
-
-  @override
-  void didUpdateWidget(MediaTypeSwitcher oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.focusNode != oldWidget.focusNode) {
-      _focusNode.removeListener(_handleFocusChange);
-      if (_isInternalFocusNode) {
-        _focusNode.dispose();
-      }
-      if (widget.focusNode != null) {
-        _focusNode = widget.focusNode!;
-        _isInternalFocusNode = false;
-      } else {
-        _focusNode = FocusNode(debugLabel: 'MediaTypeSwitcher');
-        _isInternalFocusNode = true;
-      }
-      _focusNode.addListener(_handleFocusChange);
-    }
-  }
-
-  void _handleFocusChange() {
-    if (_isFocused != _focusNode.hasFocus) {
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
-    }
+    _focusNode = FocusNode(debugLabel: 'MediaTypeTab_${widget.label}');
+    _focusNode.addListener(_onFocusChange);
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_handleFocusChange);
-    if (_isInternalFocusNode) {
-      _focusNode.dispose();
-    }
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
     super.dispose();
   }
 
-  void _toggle() {
-    widget.onChanged(!widget.isMoviesActive);
+  void _onFocusChange() {
+    setState(() => _isFocused = _focusNode.hasFocus);
   }
 
   @override
@@ -81,26 +83,15 @@ class _MediaTypeSwitcherState extends State<MediaTypeSwitcher> {
     final theme = Theme.of(context);
     final isActive = _isFocused || _isHovered;
 
-    final primaryColor = theme.colorScheme.primary;
-    final backgroundColor = isActive
-        ? primaryColor
-        : primaryColor.withValues(alpha: 0.1);
-    final borderColor = isActive
-        ? Colors.white.withValues(alpha: 0.9)
-        : primaryColor;
-    final textColor = isActive
-        ? theme.colorScheme.onPrimary
-        : primaryColor;
-
     return Focus(
       focusNode: _focusNode,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.select ||
               event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.space ||
-              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
-            _toggle();
+              event.logicalKey == LogicalKeyboardKey.gameButtonA ||
+              event.logicalKey == LogicalKeyboardKey.space) {
+            widget.onTap();
             return KeyEventResult.handled;
           }
         }
@@ -111,52 +102,50 @@ class _MediaTypeSwitcherState extends State<MediaTypeSwitcher> {
         onExit: (_) => setState(() => _isHovered = false),
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
-          onTap: _toggle,
-          behavior: HitTestBehavior.opaque,
-          child: AnimatedScale(
-            scale: isActive ? 1.08 : 1.0,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutCubic,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: borderColor,
-                  width: isActive ? 2.0 : 1.0,
-                ),
-                boxShadow: isActive
-                    ? [
-                        BoxShadow(
-                          color: primaryColor.withValues(alpha: 0.6),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                        ),
-                      ]
-                    : [],
+          onTap: () {
+            _focusNode.requestFocus();
+            widget.onTap();
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: widget.isSelected
+                  ? theme.colorScheme.primary
+                  : (isActive
+                      ? theme.colorScheme.surfaceBright
+                      : theme.colorScheme.surfaceBright.withValues(alpha: 0.6)),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isActive
+                    ? theme.colorScheme.primary
+                    : (widget.isSelected
+                        ? Colors.transparent
+                        : theme.colorScheme.outline.withValues(alpha: 0.5)),
+                width: isActive ? 2 : 1,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.isMoviesActive ? 'MOVIES' : 'SERIES',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: textColor,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Icon(
-                    Icons.swap_horiz_rounded,
-                    size: 16,
-                    color: textColor,
-                  ),
-                ],
+              boxShadow: isActive
+                  ? [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Text(
+              widget.label,
+              style: TextStyle(
+                color: widget.isSelected
+                    ? theme.colorScheme.onPrimary
+                    : (isActive
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurface),
+                fontWeight: widget.isSelected || isActive
+                    ? FontWeight.bold
+                    : FontWeight.w600,
+                fontSize: 11,
+                letterSpacing: 0.6,
               ),
             ),
           ),

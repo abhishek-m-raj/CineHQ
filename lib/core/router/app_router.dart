@@ -120,11 +120,15 @@ class AppRouter {
           final id = int.tryParse(idStr) ?? 0;
           final title = state.uri.queryParameters['title'] ?? '';
           final releaseDate = state.uri.queryParameters['releaseDate'] ?? '';
+          final posterPath = state.uri.queryParameters['posterPath'];
+          final backdropPath = state.uri.queryParameters['backdropPath'];
           return VideoPlayerPage(
             tmdbId: id,
             title: title,
             releaseDate: releaseDate,
             mediaType: 'movie',
+            posterPath: posterPath,
+            backdropPath: backdropPath,
           );
         },
       ),
@@ -151,6 +155,8 @@ class AppRouter {
           final episode = int.tryParse(episodeStr) ?? 1;
           final title = state.uri.queryParameters['title'] ?? '';
           final firstAirDate = state.uri.queryParameters['firstAirDate'] ?? '';
+          final posterPath = state.uri.queryParameters['posterPath'];
+          final backdropPath = state.uri.queryParameters['backdropPath'];
           return VideoPlayerPage(
             tmdbId: id,
             title: title,
@@ -158,6 +164,8 @@ class AppRouter {
             mediaType: 'tv',
             seasonId: season,
             episodeId: episode,
+            posterPath: posterPath,
+            backdropPath: backdropPath,
           );
         },
       ),

@@ -320,7 +320,7 @@ class OfficialPlayer implements Player {
 
     VideoFormat? formatHint;
     final lowerResource = resource.toLowerCase();
-    if (lowerResource.contains('.m3u8') || lowerResource.contains('m3u8')) {
+    if (lowerResource.contains('.m3u8') || lowerResource.contains('m3u8') || lowerResource.contains('hls')) {
       formatHint = VideoFormat.hls;
     } else if (lowerResource.contains('.mpd') || lowerResource.contains('mpd')) {
       formatHint = VideoFormat.dash;
