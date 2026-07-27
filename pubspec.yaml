@@ -92,6 +92,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -173,3 +174,21 @@ flutter_launcher_icons:
   linux:
     generate: true
     image_path: "assets/logo.png"
+
+flutter_native_splash:
+  # Pure black background
+  color: "#000000"
+  color_dark: "#000000"
+
+  # Logo banner image centered on the splash screen
+  image: assets/logo_banner.png
+  image_dark: assets/logo_banner.png
+
+  android_12:
+    color: "#000000"
+    color_dark: "#000000"
+    image: assets/logo_banner.png
+    icon_background_color: "#000000"
+    icon_background_color_dark: "#000000"
+
+  web: false
