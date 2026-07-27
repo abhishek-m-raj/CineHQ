@@ -403,19 +403,6 @@ class _DetailPageState extends State<DetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (movie.tagline != null && movie.tagline!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6.0),
-                        child: Text(
-                          movie.tagline!.toUpperCase(),
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.secondary,
-                            fontSize: 10,
-                            letterSpacing: 1.5,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ).animate().fadeIn(delay: 150.ms),
                     if (movie.fullLogoPath.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
@@ -444,6 +431,19 @@ class _DetailPageState extends State<DetailPage> {
                             _formatRuntime(movie.runtime), movie.voteAverage)
                         .animate()
                         .fadeIn(delay: 200.ms),
+                    if (movie.tagline != null && movie.tagline!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10.0, bottom: 4.0),
+                        child: Text(
+                          movie.tagline!.toUpperCase(),
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.secondary,
+                            fontSize: 10,
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ).animate().fadeIn(delay: 220.ms),
                     const SizedBox(height: 20),
                     CinePrimaryBtn(
                       height: 52,
@@ -598,20 +598,6 @@ class _DetailPageState extends State<DetailPage> {
                             onPressed: () => context.pop(),
                           ),
                           const Spacer(),
-                          if (movie.tagline != null &&
-                              movie.tagline!.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: Text(
-                                movie.tagline!.toUpperCase(),
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  color: theme.colorScheme.secondary,
-                                  fontSize: 11,
-                                  letterSpacing: 2.0,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
                           SizedBox(
                             width: contentWidth,
                             child: movie.fullLogoPath.isNotEmpty
@@ -662,6 +648,20 @@ class _DetailPageState extends State<DetailPage> {
                               ),
                             ],
                           ),
+                          if (movie.tagline != null &&
+                              movie.tagline!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 14.0),
+                              child: Text(
+                                movie.tagline!.toUpperCase(),
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: theme.colorScheme.secondary,
+                                  fontSize: 11,
+                                  letterSpacing: 2.0,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
                           const SizedBox(height: 24),
                           // WATCH BUTTON
                           SizedBox(
