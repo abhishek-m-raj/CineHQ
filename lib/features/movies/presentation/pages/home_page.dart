@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/widgets/media_type_switcher.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -92,41 +93,13 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(width: 12),
-            InkWell(
-              onTap: () {
+            MediaTypeSwitcher(
+              isMoviesActive: _isMoviesActive,
+              onChanged: (isMovies) {
                 setState(() {
-                  _isMoviesActive = !_isMoviesActive;
+                  _isMoviesActive = isMovies;
                 });
               },
-              borderRadius: BorderRadius.circular(4),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  border: Border.all(color: theme.colorScheme.primary, width: 1),
-                  borderRadius: BorderRadius.circular(4),
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _isMoviesActive ? 'MOVIES' : 'SERIES',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.swap_horiz,
-                      size: 14,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),

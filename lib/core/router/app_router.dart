@@ -5,7 +5,6 @@ import 'package:talker_flutter/talker_flutter.dart';
 
 import '../../features/movies/presentation/pages/home_page.dart';
 import '../../features/movies/presentation/pages/search_page.dart';
-import '../../features/movies/presentation/pages/favorites_page.dart';
 import '../../features/movies/presentation/pages/settings_page.dart';
 import '../../features/movies/presentation/pages/detail_page.dart';
 import '../../features/movies/presentation/pages/main_navigation_page.dart';
@@ -51,18 +50,10 @@ class AppRouter {
         ),
       ),
       GoRoute(
-        name: Routes.favorites.name,
-        path: Routes.favorites.path,
-        builder: (context, state) => const MainNavigationPage(
-          selectedIndex: 2,
-          child: FavoritesPage(),
-        ),
-      ),
-      GoRoute(
         name: Routes.settings.name,
         path: Routes.settings.path,
         builder: (context, state) => const MainNavigationPage(
-          selectedIndex: 3,
+          selectedIndex: 2,
           child: SettingsPage(),
         ),
       ),
@@ -91,15 +82,6 @@ class AppRouter {
                 name: Routes.search.name,
                 path: Routes.search.path,
                 builder: (context, state) => const SearchPage(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                name: Routes.favorites.name,
-                path: Routes.favorites.path,
-                builder: (context, state) => const FavoritesPage(),
               ),
             ],
           ),

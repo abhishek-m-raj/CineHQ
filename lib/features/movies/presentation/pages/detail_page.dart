@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -12,8 +11,8 @@ import '../../domain/entities/movie.dart';
 import '../../domain/entities/genre.dart';
 import '../../domain/usecases/get_movie_recommendations.dart';
 import '../widgets/movie_horizontal_list.dart';
+import '../../../../core/widgets/focusable_glass_icon_button.dart';
 import '../cubits/movie_detail_cubit.dart';
-import '../cubits/favorites_cubit.dart';
 
 class DetailPage extends StatefulWidget {
   final int movieId;
@@ -82,36 +81,11 @@ class _DetailPageState extends State<DetailPage> {
     required VoidCallback onPressed,
     Color? iconColor,
   }) {
-    final isDark = theme.brightness == Brightness.dark;
-    return ClipOval(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.4)
-                : Colors.white.withValues(alpha: 0.6),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.black.withValues(alpha: 0.08),
-              width: 1,
-            ),
-          ),
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            icon: Icon(
-              icon,
-              color: iconColor ?? theme.colorScheme.primary,
-              size: 20,
-            ),
-            onPressed: onPressed,
-          ),
-        ),
-      ),
+    return FocusableGlassIconButton(
+      theme: theme,
+      icon: icon,
+      onPressed: onPressed,
+      iconColor: iconColor,
     );
   }
 
@@ -326,26 +300,6 @@ class _DetailPageState extends State<DetailPage> {
               ),
             ),
           ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: BlocBuilder<FavoritesCubit, List<int>>(
-                bloc: sl<FavoritesCubit>(),
-                builder: (context, favoriteIds) {
-                  final isFavorite = favoriteIds.contains(movie.id);
-                  return _buildGlassIconButton(
-                    theme: theme,
-                    icon: isFavorite
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    iconColor: isFavorite ? Colors.redAccent : null,
-                    onPressed: () =>
-                        sl<FavoritesCubit>().toggleFavorite(movie.id),
-                  );
-                },
-              ),
-            ),
-          ],
           flexibleSpace: FlexibleSpaceBar(
             stretchModes: const [StretchMode.zoomBackground],
             background: Stack(
@@ -619,34 +573,11 @@ class _DetailPageState extends State<DetailPage> {
                                   ),
                           ),
                           const SizedBox(height: 18),
-                          Row(
-                            children: [
-                              _buildMetadataRow(
-                                theme,
-                                year,
-                                _formatRuntime(movie.runtime),
-                                movie.voteAverage,
-                              ),
-                              const SizedBox(width: 16),
-                              BlocBuilder<FavoritesCubit, List<int>>(
-                                bloc: sl<FavoritesCubit>(),
-                                builder: (context, favoriteIds) {
-                                  final isFavorite =
-                                      favoriteIds.contains(movie.id);
-                                  return _buildGlassIconButton(
-                                    theme: theme,
-                                    icon: isFavorite
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                    iconColor: isFavorite
-                                        ? Colors.redAccent
-                                        : null,
-                                    onPressed: () => sl<FavoritesCubit>()
-                                        .toggleFavorite(movie.id),
-                                  );
-                                },
-                              ),
-                            ],
+                          _buildMetadataRow(
+                            theme,
+                            year,
+                            _formatRuntime(movie.runtime),
+                            movie.voteAverage,
                           ),
                           if (movie.tagline != null &&
                               movie.tagline!.isNotEmpty)

@@ -18,7 +18,6 @@ import '../../features/movies/domain/usecases/get_top_rated_movies.dart';
 import '../../features/movies/domain/usecases/search_movies.dart';
 import '../../features/movies/presentation/blocs/movies_bloc.dart';
 import '../../features/movies/presentation/cubits/movie_detail_cubit.dart';
-import '../../features/movies/presentation/cubits/favorites_cubit.dart';
 
 // TV Show Feature
 import '../../features/tv_shows/data/datasources/tv_show_remote_data_source.dart';
@@ -32,7 +31,6 @@ import '../../features/tv_shows/domain/usecases/search_tv_shows.dart';
 import '../../features/tv_shows/domain/usecases/get_season_episodes.dart';
 import '../../features/tv_shows/presentation/blocs/tv_shows_bloc.dart';
 import '../../features/tv_shows/presentation/cubits/tv_show_detail_cubit.dart';
-import '../../features/tv_shows/presentation/cubits/tv_favorites_cubit.dart';
 
 import '../../features/movies/domain/usecases/get_movie_recommendations.dart';
 import '../../features/tv_shows/domain/usecases/get_tv_show_recommendations.dart';
@@ -91,8 +89,6 @@ Future<void> init() async {
 
   // Presentation Layer - Blocs & Cubits
   sl.registerLazySingleton(() => ThemeCubit(sl()));
-  sl.registerLazySingleton(() => FavoritesCubit(sl()));
-  sl.registerLazySingleton(() => TvFavoritesCubit(sl()));
   
   // Consolidated MoviesBloc
   sl.registerLazySingleton(() => MoviesBloc(

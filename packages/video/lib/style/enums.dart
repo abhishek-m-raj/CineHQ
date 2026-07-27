@@ -1,0 +1,1 @@
+enum VidPlayerMode { mobile, desktop }

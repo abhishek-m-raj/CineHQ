@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cineui/cineui.dart';
 
+import '../../../../core/widgets/media_type_switcher.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../blocs/movies_bloc.dart';
@@ -83,43 +84,32 @@ class _SearchPageState extends State<SearchPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'SEARCH',
-          style: theme.textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w900,
-            fontSize: 22,
-            letterSpacing: 1.2,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'SEARCH',
+              style: theme.textTheme.headlineLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(width: 12),
+            MediaTypeSwitcher(
+              isMoviesActive: _isMoviesActive,
+              onChanged: (isMovies) {
+                setState(() {
+                  _isMoviesActive = isMovies;
+                });
+                _clearSearch();
+              },
+            ),
+          ],
         ),
       ),
       body: Column(
         children: [
-          // Movie vs TV Show toggle
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-            child: Row(
-              children: [
-                _buildToggleButton(context, 'MOVIES', _isMoviesActive, () {
-                  if (!_isMoviesActive) {
-                    setState(() {
-                      _isMoviesActive = true;
-                    });
-                    _clearSearch();
-                  }
-                }),
-                const SizedBox(width: 10),
-                _buildToggleButton(context, 'TV SHOWS', !_isMoviesActive, () {
-                  if (_isMoviesActive) {
-                    setState(() {
-                      _isMoviesActive = false;
-                    });
-                    _clearSearch();
-                  }
-                }),
-              ],
-            ),
-          ),
-
           // Search Input Field
           Padding(
             padding: EdgeInsets.symmetric(
@@ -142,34 +132,6 @@ class _SearchPageState extends State<SearchPage> {
             child: _isMoviesActive ? _buildMoviesSearchBody(theme) : _buildTVShowsSearchBody(theme),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildToggleButton(BuildContext context, String text, bool isActive, VoidCallback onTap) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(4),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? theme.colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: isActive ? theme.colorScheme.primary : theme.colorScheme.outline,
-            width: 1,
-          ),
-        ),
-        child: Text(
-          text,
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: isActive ? theme.colorScheme.onPrimary : theme.colorScheme.secondary,
-            fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
-            fontSize: 11,
-            letterSpacing: 0.5,
-          ),
-        ),
       ),
     );
   }

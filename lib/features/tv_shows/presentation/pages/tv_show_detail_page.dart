@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,8 +15,8 @@ import '../../../movies/domain/entities/genre.dart';
 import '../../domain/usecases/get_season_episodes.dart';
 import '../../domain/usecases/get_tv_show_recommendations.dart';
 import '../widgets/tv_show_horizontal_list.dart';
+import '../../../../core/widgets/focusable_glass_icon_button.dart';
 import '../cubits/tv_show_detail_cubit.dart';
-import '../cubits/tv_favorites_cubit.dart';
 
 class TVShowDetailPage extends StatefulWidget {
   final int tvShowId;
@@ -99,36 +98,11 @@ class _TVShowDetailPageState extends State<TVShowDetailPage> {
     required VoidCallback onPressed,
     Color? iconColor,
   }) {
-    final isDark = theme.brightness == Brightness.dark;
-    return ClipOval(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.4)
-                : Colors.white.withValues(alpha: 0.6),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.black.withValues(alpha: 0.08),
-              width: 1,
-            ),
-          ),
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            icon: Icon(
-              icon,
-              color: iconColor ?? theme.colorScheme.primary,
-              size: 20,
-            ),
-            onPressed: onPressed,
-          ),
-        ),
-      ),
+    return FocusableGlassIconButton(
+      theme: theme,
+      icon: icon,
+      onPressed: onPressed,
+      iconColor: iconColor,
     );
   }
 
@@ -457,26 +431,6 @@ class _TVShowDetailPageState extends State<TVShowDetailPage> {
               ),
             ),
           ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: BlocBuilder<TvFavoritesCubit, List<int>>(
-                bloc: sl<TvFavoritesCubit>(),
-                builder: (context, favoriteIds) {
-                  final isFavorite = favoriteIds.contains(tvShow.id);
-                  return _buildGlassIconButton(
-                    theme: theme,
-                    icon: isFavorite
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    iconColor: isFavorite ? Colors.redAccent : null,
-                    onPressed: () =>
-                        sl<TvFavoritesCubit>().toggleFavorite(tvShow.id),
-                  );
-                },
-              ),
-            ),
-          ],
           flexibleSpace: FlexibleSpaceBar(
             stretchModes: const [StretchMode.zoomBackground],
             background: Stack(
@@ -744,35 +698,12 @@ class _TVShowDetailPageState extends State<TVShowDetailPage> {
                                   ),
                           ),
                           const SizedBox(height: 18),
-                          Row(
-                            children: [
-                              _buildTVMetadataRow(
-                                theme,
-                                year,
-                                tvShow.numberOfSeasons,
-                                tvShow.numberOfEpisodes,
-                                tvShow.voteAverage,
-                              ),
-                              const SizedBox(width: 16),
-                              BlocBuilder<TvFavoritesCubit, List<int>>(
-                                bloc: sl<TvFavoritesCubit>(),
-                                builder: (context, favoriteIds) {
-                                  final isFavorite =
-                                      favoriteIds.contains(tvShow.id);
-                                  return _buildGlassIconButton(
-                                    theme: theme,
-                                    icon: isFavorite
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                    iconColor: isFavorite
-                                        ? Colors.redAccent
-                                        : null,
-                                    onPressed: () => sl<TvFavoritesCubit>()
-                                        .toggleFavorite(tvShow.id),
-                                  );
-                                },
-                              ),
-                            ],
+                          _buildTVMetadataRow(
+                            theme,
+                            year,
+                            tvShow.numberOfSeasons,
+                            tvShow.numberOfEpisodes,
+                            tvShow.voteAverage,
                           ),
                           if (tvShow.tagline != null &&
                               tvShow.tagline!.isNotEmpty)

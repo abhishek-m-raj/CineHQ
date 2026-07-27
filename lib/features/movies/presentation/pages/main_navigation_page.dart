@@ -38,9 +38,6 @@ class MainNavigationPage extends StatelessWidget {
           context.go(Routes.search.path);
           break;
         case 2:
-          context.go(Routes.favorites.path);
-          break;
-        case 3:
           context.go(Routes.settings.path);
           break;
       }
@@ -61,12 +58,8 @@ class MainNavigationPage extends StatelessWidget {
         id: 1,
       ),
       CineNavbarItem(
-        icon: CineIcons.bookmarks,
-        id: 2,
-      ),
-      CineNavbarItem(
         icon: CineIcons.settings,
-        id: 3,
+        id: 2,
       ),
     ];
 

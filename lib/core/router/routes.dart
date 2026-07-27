@@ -1,7 +1,6 @@
 enum Routes {
   home('/'),
   search('/search'),
-  favorites('/favorites'),
   settings('/settings'),
 
   movieDetails('/movie/:id'),

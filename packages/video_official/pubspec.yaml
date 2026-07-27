@@ -1,0 +1,14 @@
+name: video_official
+resolution: workspace
+publish_to: "none"
+
+environment:
+  sdk: "^3.12.0"
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  video:
+    path: ../video
+  video_player: ^2.8.2

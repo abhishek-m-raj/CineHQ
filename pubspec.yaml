@@ -4,6 +4,9 @@ workspace:
   - packages/device
   - packages/cineui
   - packages/responsive
+  - packages/video
+  - packages/video_media_kit
+  - packages/video_official
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -55,12 +58,28 @@ dependencies:
   media_kit: ^1.2.6
   media_kit_video: ^2.0.1
   media_kit_libs_video: ^1.0.7
+  vibration: ^3.2.0
+  popover: ^0.4.0
+  screen_brightness: ^2.0.0+2
+  volume_controller: ^3.4.0
+  animated_visibility: ^0.0.4
+  locale_names: ^1.1.1
+  auto_orientation: ^2.0.1
+  window_manager: ^0.5.2
+  fullscreen_window: ^1.0.1
+  wakelock_plus: ^1.1.4
   cineui:
     path: packages/cineui
   responsive:
     path: packages/responsive
   device:
     path: packages/device
+  video:
+    path: packages/video
+  video_media_kit:
+    path: packages/video_media_kit
+  video_official:
+    path: packages/video_official
 
 dev_dependencies:
   flutter_test:

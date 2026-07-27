@@ -8,6 +8,10 @@ import 'package:media_kit/media_kit.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import 'package:video/video.dart';
+import 'package:video_official/video_official.dart';
+import 'package:video_media_kit/video_media_kit.dart';
+
 import 'core/di/service_locator.dart' as di;
 import 'core/di/talker_bloc_observer.dart';
 import 'core/router/app_router.dart';
@@ -36,8 +40,31 @@ final shortcuts = {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Device.ensureInitialized(debugTvMode: true);
+  Device.ensureInitialized();
   MediaKit.ensureInitialized();
+
+  await Video.initialize({
+    PlatformType.android: VideoPlayerConfig(
+      factory: () => OfficialPlayer(),
+      initialize: () async => MediaKitPlayer.initialize(),
+    ),
+    PlatformType.iOS: VideoPlayerConfig(
+      factory: () => MediaKitPlayer(),
+      initialize: () async => MediaKitPlayer.initialize(),
+    ),
+    PlatformType.macOS: VideoPlayerConfig(
+      factory: () => MediaKitPlayer(),
+      initialize: () async => MediaKitPlayer.initialize(),
+    ),
+    PlatformType.windows: VideoPlayerConfig(
+      factory: () => MediaKitPlayer(),
+      initialize: () async => MediaKitPlayer.initialize(),
+    ),
+    PlatformType.linux: VideoPlayerConfig(
+      factory: () => MediaKitPlayer(),
+      initialize: () async => MediaKitPlayer.initialize(),
+    ),
+  });
 
   // Load environment variables
   await dotenv.load(fileName: ".env");

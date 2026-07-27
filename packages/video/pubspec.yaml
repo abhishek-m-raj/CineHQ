@@ -1,0 +1,33 @@
+name: video
+resolution: workspace
+publis_to: "none"
+
+environment:
+  sdk: "^3.12.0"
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  device:
+    path: ../device
+  responsive:
+    path: ../responsive
+  flutter_animate: ^4.5.0
+  cached_network_image: ^3.3.1
+  hugeicons: ^1.1.7
+  vibration: ^3.2.0
+  connectivity_plus: ^7.2.0
+  popover: ^0.4.0
+  logger: ^2.2.0
+  screen_brightness: ^2.0.0+2
+  volume_controller: ^3.4.0
+  animated_visibility: ^0.0.4
+  http: ^1.2.2
+  locale_names: ^1.1.1
+  auto_orientation: ^2.0.1
+  window_manager: ^0.5.2
+  fullscreen_window: ^1.0.1
+  wakelock_plus: ^1.1.4
+  google_fonts: ^8.1.0
+
