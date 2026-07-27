@@ -16,6 +16,10 @@ import '../../../tv_shows/presentation/blocs/tv_shows_bloc.dart';
 import '../../../tv_shows/presentation/cubits/tv_shows_list_state.dart';
 import '../../../tv_shows/presentation/widgets/tv_show_spotlights.dart';
 import '../../../tv_shows/presentation/widgets/tv_show_horizontal_list.dart';
+import '../../../video_player/presentation/widgets/continue_watching_section.dart';
+
+
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -167,7 +171,9 @@ class _HomePageState extends State<HomePage> {
           return const SizedBox.shrink();
         },
       ),
-      const SizedBox(height: 32),
+      const SizedBox(height: 28),
+      const ContinueWatchingSection(filterMediaType: 'movie'),
+      const SizedBox(height: 28),
       // Popular Section
       BlocBuilder<MoviesBloc, MoviesState>(
         bloc: _moviesBloc,
@@ -239,7 +245,9 @@ class _HomePageState extends State<HomePage> {
           return const SizedBox.shrink();
         },
       ),
-      const SizedBox(height: 32),
+      const SizedBox(height: 28),
+      const ContinueWatchingSection(filterMediaType: 'tv'),
+      const SizedBox(height: 28),
       // Popular TV Shows
       BlocBuilder<TVShowsBloc, TVShowsState>(
         bloc: _tvShowsBloc,
@@ -288,6 +296,7 @@ class _HomePageState extends State<HomePage> {
       const SizedBox(height: 32),
     ];
   }
+
 
   Widget _buildHeroSkeleton(ThemeData theme) {
     return Column(

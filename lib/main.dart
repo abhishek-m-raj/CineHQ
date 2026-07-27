@@ -17,6 +17,8 @@ import 'core/di/talker_bloc_observer.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_cubit.dart';
+import 'features/video_player/presentation/cubits/continue_watching_cubit.dart';
+
 
 final shortcuts = {
   if (Device.isTv) ...{
@@ -96,8 +98,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<ThemeCubit>(
-      create: (context) => di.sl<ThemeCubit>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ThemeCubit>(
+          create: (context) => di.sl<ThemeCubit>(),
+        ),
+        BlocProvider<ContinueWatchingCubit>(
+          create: (context) => di.sl<ContinueWatchingCubit>(),
+        ),
+      ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
           return MaterialApp.router(
@@ -114,3 +123,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

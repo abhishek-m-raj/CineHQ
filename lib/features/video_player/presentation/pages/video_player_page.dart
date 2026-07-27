@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:device/device.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,8 @@ import '../../../../core/network/opensubtitles_service.dart';
 import '../../../../core/network/vidking_scraper.dart';
 import '../../../tv_shows/domain/usecases/get_season_episodes.dart';
 import '../../../tv_shows/domain/usecases/get_tv_show_details.dart';
+import '../cubits/continue_watching_cubit.dart';
+
 
 class VideoPlayerPage extends StatefulWidget {
   final int tmdbId;
@@ -53,6 +56,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   late int _currentSeason;
   late int _currentEpisode;
   String? _errorMessage;
+  StreamSubscription<bool>? _completedSub;
+  StreamSubscription<Duration>? _positionSub;
+  bool _isAutoAdvancing = false;
+  int? _lastSavedSecond;
+  String? _resumedTimeText;
+  Timer? _resumedBannerTimer;
+
 
   String _formatYear(String dateStr) {
     if (dateStr.isEmpty) return '';
@@ -95,6 +105,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     vidController.onSearchSubtitles = _searchSubtitles;
     vidController.onDownloadSubtitle = _downloadSubtitle;
 
+    _completedSub = vidController.streams.onCompleted.listen((completed) {
+      if (completed && mounted && widget.mediaType == 'tv' && !_isAutoAdvancing) {
+        _playNextEpisode();
+      }
+    });
+
     final coverUrl = _getCoverImageUrl();
 
     vidController.setVideoInfo(
@@ -109,6 +125,32 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
 
     _startScrapingAndPlay();
+  }
+
+  Future<void> _playNextEpisode() async {
+    if (_isAutoAdvancing) return;
+    _isAutoAdvancing = true;
+
+    try {
+      final nextEpisode = _currentEpisode + 1;
+      final totalEpisodesInCurrentSeason = vidController.episodeData?.episodes.length ?? 0;
+      final totalSeasons = vidController.episodeData?.totalSeasons ?? 1;
+
+      if (totalEpisodesInCurrentSeason > 0 && nextEpisode <= totalEpisodesInCurrentSeason) {
+        _switchEpisode(_currentSeason, nextEpisode);
+      } else if (_currentSeason < totalSeasons) {
+        final nextSeason = _currentSeason + 1;
+        await _loadTVShowEpisodes(nextSeason);
+        _switchEpisode(nextSeason, 1);
+      }
+    } catch (_) {
+    } finally {
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          _isAutoAdvancing = false;
+        }
+      });
+    }
   }
 
   String? _getCoverImageUrl() {
@@ -171,6 +213,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     if (_currentSeason == season && _currentEpisode == episode && vidController.player.state.playing) {
       return;
     }
+    _saveCurrentProgress();
     setState(() {
       _currentSeason = season;
       _currentEpisode = episode;
@@ -342,6 +385,22 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       }
 
       await vidController.loadVideo(data: datasource);
+
+      final savedItem = sl<ContinueWatchingCubit>().getItemForShow(widget.tmdbId, widget.mediaType);
+      if (savedItem != null && savedItem.positionInSeconds > 5 && !savedItem.isCompleted) {
+        final isSameEpisode = widget.mediaType == 'movie' ||
+            (savedItem.seasonNumber == _currentSeason && savedItem.episodeNumber == _currentEpisode);
+        if (isSameEpisode) {
+          final targetDuration = Duration(seconds: savedItem.positionInSeconds);
+          await vidController.player.seek(targetDuration);
+          _showResumedBanner(savedItem.formattedPosition.split(' / ').first);
+        }
+      }
+
+      _positionSub?.cancel();
+      _positionSub = vidController.player.stream.position.listen((pos) {
+        _saveCurrentProgress(pos);
+      });
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -352,8 +411,50 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
   }
 
+  void _saveCurrentProgress([Duration? currentPos]) {
+    final pos = currentPos ?? vidController.player.state.position;
+    final dur = vidController.player.state.duration;
+
+    if (dur.inSeconds > 0 && pos.inSeconds > 0) {
+      if (_lastSavedSecond == null || (pos.inSeconds - _lastSavedSecond!).abs() >= 3) {
+        _lastSavedSecond = pos.inSeconds;
+        sl<ContinueWatchingCubit>().saveProgress(
+          tmdbId: widget.tmdbId,
+          mediaType: widget.mediaType,
+          title: widget.title,
+          releaseDate: widget.releaseDate,
+          posterPath: widget.posterPath,
+          backdropPath: widget.backdropPath,
+          seasonNumber: widget.mediaType == 'tv' ? _currentSeason : null,
+          episodeNumber: widget.mediaType == 'tv' ? _currentEpisode : null,
+          positionInSeconds: pos.inSeconds,
+          durationInSeconds: dur.inSeconds,
+        );
+      }
+    }
+  }
+
+  void _showResumedBanner(String formattedTime) {
+    if (!mounted) return;
+    _resumedBannerTimer?.cancel();
+    setState(() {
+      _resumedTimeText = formattedTime;
+    });
+    _resumedBannerTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) {
+        setState(() {
+          _resumedTimeText = null;
+        });
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _resumedBannerTimer?.cancel();
+    _saveCurrentProgress();
+    _positionSub?.cancel();
+    _completedSub?.cancel();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     vidController.dispose();
     vidController.player.dispose();
@@ -380,6 +481,60 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 ),
               ),
             ),
+            if (_resumedTimeText != null)
+              Positioned(
+                top: 40,
+                left: 20,
+                right: 20,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.6), width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.history, color: theme.colorScheme.primary, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Resumed from $_resumedTimeText',
+                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: () {
+                            vidController.player.seek(Duration.zero);
+                            setState(() => _resumedTimeText = null);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.5)),
+                            ),
+                            child: Text(
+                              'Start Over',
+                              style: TextStyle(color: theme.colorScheme.primary, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
             if (_errorMessage != null)
               Container(
                 color: Colors.black.withValues(alpha: 0.90),

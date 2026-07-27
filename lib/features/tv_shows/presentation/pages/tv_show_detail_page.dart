@@ -17,6 +17,9 @@ import '../../domain/usecases/get_tv_show_recommendations.dart';
 import '../widgets/tv_show_horizontal_list.dart';
 import '../../../../core/widgets/focusable_glass_icon_button.dart';
 import '../cubits/tv_show_detail_cubit.dart';
+import '../../../video_player/presentation/cubits/continue_watching_cubit.dart';
+
+
 
 class TVShowDetailPage extends StatefulWidget {
   final int tvShowId;
@@ -540,14 +543,10 @@ class _TVShowDetailPageState extends State<TVShowDetailPage> {
                         ),
                       ).animate().fadeIn(delay: 220.ms),
                     const SizedBox(height: 20),
-                    CinePrimaryBtn(
-                      height: 52,
-                      text: 'WATCH TV SHOW',
-                      icon: CineIcons.play,
-                      focusNode: _watchButtonFocusNode,
-                      scrollTillTop: true,
-                      onTap: () => _showEpisodeSelector(context, tvShow, theme),
-                    ).animate().fadeIn(delay: 250.ms),
+                    _buildWatchButtonSection(
+                        context, theme, tvShow, _watchButtonFocusNode)
+                    .animate()
+                    .fadeIn(delay: 250.ms),
                     const SizedBox(height: 20),
                     const Divider(height: 1),
                     const SizedBox(height: 20),
@@ -733,16 +732,9 @@ class _TVShowDetailPageState extends State<TVShowDetailPage> {
                           const SizedBox(height: 24),
                           // WATCH BUTTON
                           SizedBox(
-                            width: contentWidth.clamp(0.0, 400.0),
-                            child: CinePrimaryBtn(
-                              height: 54,
-                              text: 'WATCH TV SHOW',
-                              icon: CineIcons.play,
-                              focusNode: _watchButtonFocusNode,
-                              scrollTillTop: true,
-                              onTap: () =>
-                                  _showEpisodeSelector(context, tvShow, theme),
-                            ),
+                            width: contentWidth.clamp(0.0, 420.0),
+                            child: _buildWatchButtonSection(
+                                context, theme, tvShow, _watchButtonFocusNode),
                           ),
                         ],
                       ),
@@ -803,6 +795,7 @@ class _TVShowDetailPageState extends State<TVShowDetailPage> {
     );
   }
 
+  // ignore: unused_element
   void _showEpisodeSelector(
     BuildContext context,
     TVShowDetail tvShow,
@@ -1002,7 +995,122 @@ class _TVShowDetailPageState extends State<TVShowDetailPage> {
       },
     );
   }
+
+  Widget _buildWatchButtonSection(
+      BuildContext context, ThemeData theme, TVShowDetail tvShow, FocusNode focusNode) {
+    return BlocBuilder<ContinueWatchingCubit, ContinueWatchingState>(
+      builder: (context, state) {
+        final cubit = context.read<ContinueWatchingCubit>();
+        final item = cubit.getItemForShow(tvShow.id, 'tv');
+        final hasSavedProgress =
+            item != null && !item.isCompleted && item.positionInSeconds > 5;
+
+        final season = item?.seasonNumber ?? 1;
+        final episode = item?.episodeNumber ?? 1;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (hasSavedProgress) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.history,
+                                size: 16, color: theme.colorScheme.primary),
+                            const SizedBox(width: 6),
+                            Text(
+                              'RESUME S$season:E$episode',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          item.formattedTimeLeft,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: item.progressPercentage,
+                        minHeight: 5,
+                        backgroundColor:
+                            theme.colorScheme.outline.withValues(alpha: 0.3),
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Position: ${item.formattedPosition}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 10.5,
+                        color: theme.colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            CinePrimaryBtn(
+              height: 52,
+              text: hasSavedProgress
+                  ? 'RESUME S$season:E$episode'
+                  : 'WATCH TV SHOW',
+              icon: CineIcons.play,
+              focusNode: focusNode,
+              scrollTillTop: true,
+              onTap: () {
+                final title = Uri.encodeComponent(tvShow.name);
+                final firstAirDate =
+                    Uri.encodeComponent(tvShow.firstAirDate ?? '');
+                final posterPath =
+                    Uri.encodeComponent(tvShow.posterPath ?? '');
+                final backdropPath =
+                    Uri.encodeComponent(tvShow.backdropPath ?? '');
+                if (hasSavedProgress) {
+                  context.push(
+                    '/play/tv/${tvShow.id}/$season/$episode?title=$title&firstAirDate=$firstAirDate&posterPath=$posterPath&backdropPath=$backdropPath',
+                  );
+                } else {
+                  context.push(
+                    '/play/tv/${tvShow.id}/1/1?title=$title&firstAirDate=$firstAirDate&posterPath=$posterPath&backdropPath=$backdropPath',
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
+
 
 // ─────────────────── FOCUSABLE & HOVERABLE SEASON TAB TILE ──────────────────
 

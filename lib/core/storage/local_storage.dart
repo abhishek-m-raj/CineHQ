@@ -54,4 +54,19 @@ class LocalStorage {
     await _prefs.remove(_usernameKey);
     await _prefs.remove(_accountIdKey);
   }
+
+  static const _continueWatchingKey = 'continue_watching_list';
+
+  List<String> getContinueWatchingRawList() {
+    return _prefs.getStringList(_continueWatchingKey) ?? [];
+  }
+
+  Future<void> saveContinueWatchingRawList(List<String> rawList) async {
+    await _prefs.setStringList(_continueWatchingKey, rawList);
+  }
+
+  Future<void> clearContinueWatchingHistory() async {
+    await _prefs.remove(_continueWatchingKey);
+  }
 }
+

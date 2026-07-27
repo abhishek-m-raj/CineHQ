@@ -5,6 +5,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/theme/theme_cubit.dart';
+import '../../../video_player/presentation/cubits/continue_watching_cubit.dart';
+
+
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -290,11 +293,113 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
+            const SizedBox(height: 32),
+
+            // Continue Watching Section
+            _buildSectionHeader(theme, 'WATCH HISTORY & STORAGE'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: theme.colorScheme.outline),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: BlocBuilder<ContinueWatchingCubit, ContinueWatchingState>(
+                builder: (context, state) {
+                  final itemCount = state.items.length;
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'CONTINUE WATCHING HISTORY',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              itemCount > 0
+                                  ? '$itemCount saved item${itemCount == 1 ? '' : 's'} in watch progress'
+                                  : 'No watch progress saved currently.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.secondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: itemCount > 0
+                            ? () => _showClearHistoryDialog(context, theme)
+                            : null,
+                        icon: const Icon(
+                          Icons.delete_outline_sharp,
+                          size: 16,
+                          color: Colors.redAccent,
+                        ),
+                        label: Text(
+                          'CLEAR HISTORY',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontSize: 11,
+                            color: itemCount > 0 ? Colors.redAccent : theme.colorScheme.outline,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+                          side: BorderSide(
+                            color: itemCount > 0 ? Colors.redAccent : theme.colorScheme.outline,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+
+  void _showClearHistoryDialog(BuildContext context, ThemeData theme) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.colorScheme.surface,
+        title: const Text('Clear Watch History?'),
+        content: const Text(
+          'This will remove all saved progress for movies and TV shows from Continue Watching.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              context.read<ContinueWatchingCubit>().clearAll();
+              Navigator.of(dialogContext).pop();
+            },
+            child: const Text('CLEAR ALL'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildSectionHeader(ThemeData theme, String text) {
     return Text(

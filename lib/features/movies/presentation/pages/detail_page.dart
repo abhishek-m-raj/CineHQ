@@ -13,6 +13,13 @@ import '../../domain/usecases/get_movie_recommendations.dart';
 import '../widgets/movie_horizontal_list.dart';
 import '../../../../core/widgets/focusable_glass_icon_button.dart';
 import '../cubits/movie_detail_cubit.dart';
+import '../../../video_player/presentation/cubits/continue_watching_cubit.dart';
+
+
+
+
+
+
 
 class DetailPage extends StatefulWidget {
   final int movieId;
@@ -399,23 +406,10 @@ class _DetailPageState extends State<DetailPage> {
                         ),
                       ).animate().fadeIn(delay: 220.ms),
                     const SizedBox(height: 20),
-                    CinePrimaryBtn(
-                      height: 52,
-                      text: 'WATCH MOVIE',
-                      icon: CineIcons.play,
-                      focusNode: _watchButtonFocusNode,
-                      scrollTillTop: true,
-                      onTap: () {
-                        final title = Uri.encodeComponent(movie.title);
-                        final releaseDate =
-                            Uri.encodeComponent(movie.releaseDate ?? '');
-                        final posterPath = Uri.encodeComponent(movie.posterPath ?? '');
-                        final backdropPath = Uri.encodeComponent(movie.backdropPath ?? '');
-                        context.push(
-                          '/play/movie/${movie.id}?title=$title&releaseDate=$releaseDate&posterPath=$posterPath&backdropPath=$backdropPath',
-                        );
-                      },
-                    ).animate().fadeIn(delay: 250.ms),
+                    _buildWatchButtonSection(
+                        context, theme, movie, _watchButtonFocusNode)
+                    .animate()
+                    .fadeIn(delay: 250.ms),
                     const SizedBox(height: 20),
                     const Divider(height: 1),
                     const SizedBox(height: 20),
@@ -599,25 +593,9 @@ class _DetailPageState extends State<DetailPage> {
                           const SizedBox(height: 24),
                           // WATCH BUTTON
                           SizedBox(
-                            width: contentWidth.clamp(0.0, 400.0),
-                            child: CinePrimaryBtn(
-                              height: 54,
-                              text: 'WATCH MOVIE',
-                              icon: CineIcons.play,
-                              focusNode: _watchButtonFocusNode,
-                              scrollTillTop: true,
-                              onTap: () {
-                                final title =
-                                    Uri.encodeComponent(movie.title);
-                                final releaseDate = Uri.encodeComponent(
-                                    movie.releaseDate ?? '');
-                                final posterPath = Uri.encodeComponent(movie.posterPath ?? '');
-                                final backdropPath = Uri.encodeComponent(movie.backdropPath ?? '');
-                                context.push(
-                                  '/play/movie/${movie.id}?title=$title&releaseDate=$releaseDate&posterPath=$posterPath&backdropPath=$backdropPath',
-                                );
-                              },
-                            ),
+                            width: contentWidth.clamp(0.0, 420.0),
+                            child: _buildWatchButtonSection(
+                                context, theme, movie, _watchButtonFocusNode),
                           ),
                         ],
                       ),
@@ -675,7 +653,142 @@ class _DetailPageState extends State<DetailPage> {
       ],
     );
   }
+
+  Widget _buildWatchButtonSection(
+      BuildContext context, ThemeData theme, dynamic movie, FocusNode focusNode) {
+    return BlocBuilder<ContinueWatchingCubit, ContinueWatchingState>(
+      builder: (context, state) {
+        final cubit = context.read<ContinueWatchingCubit>();
+        final item = cubit.getItemForShow(movie.id, 'movie');
+        final hasSavedProgress =
+            item != null && !item.isCompleted && item.positionInSeconds > 5;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (hasSavedProgress) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.history,
+                                size: 16, color: theme.colorScheme.primary),
+                            const SizedBox(width: 6),
+                            Text(
+                              'RESUME WATCHING',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          item.formattedTimeLeft,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: item.progressPercentage,
+                        minHeight: 5,
+                        backgroundColor:
+                            theme.colorScheme.outline.withValues(alpha: 0.3),
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Position: ${item.formattedPosition}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 10.5,
+                        color: theme.colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            Row(
+              children: [
+                Expanded(
+                  child: CinePrimaryBtn(
+                    height: 52,
+                    text: hasSavedProgress ? 'RESUME MOVIE' : 'WATCH MOVIE',
+                    icon: CineIcons.play,
+                    focusNode: focusNode,
+                    scrollTillTop: true,
+                    onTap: () {
+                      final title = Uri.encodeComponent(movie.title);
+                      final releaseDate =
+                          Uri.encodeComponent(movie.releaseDate ?? '');
+                      final posterPath =
+                          Uri.encodeComponent(movie.posterPath ?? '');
+                      final backdropPath =
+                          Uri.encodeComponent(movie.backdropPath ?? '');
+                      context.push(
+                        '/play/movie/${movie.id}?title=$title&releaseDate=$releaseDate&posterPath=$posterPath&backdropPath=$backdropPath',
+                      );
+                    },
+                  ),
+                ),
+                if (hasSavedProgress) ...[
+                  const SizedBox(width: 10),
+                  CineSecondaryBtn(
+                    height: 52,
+                    text: 'RESTART',
+                    icon: NormalIcon(Icons.refresh),
+                    onTap: () async {
+                      await context
+                          .read<ContinueWatchingCubit>()
+                          .removeItem(item.key);
+                      if (context.mounted) {
+                        final title = Uri.encodeComponent(movie.title);
+                        final releaseDate =
+                            Uri.encodeComponent(movie.releaseDate ?? '');
+                        final posterPath =
+                            Uri.encodeComponent(movie.posterPath ?? '');
+                        final backdropPath =
+                            Uri.encodeComponent(movie.backdropPath ?? '');
+                        context.push(
+                          '/play/movie/${movie.id}?title=$title&releaseDate=$releaseDate&posterPath=$posterPath&backdropPath=$backdropPath',
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
+
 
 class _DetailLoadingWidget extends StatelessWidget {
   const _DetailLoadingWidget();
@@ -944,3 +1057,5 @@ class _DetailLoadingWidget extends StatelessWidget {
     );
   }
 }
+
+

@@ -37,6 +37,7 @@ import '../../features/tv_shows/domain/usecases/get_tv_show_recommendations.dart
 
 // Presentation Blocs/Cubits
 import '../theme/theme_cubit.dart';
+import '../../features/video_player/presentation/cubits/continue_watching_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -89,6 +90,8 @@ Future<void> init() async {
 
   // Presentation Layer - Blocs & Cubits
   sl.registerLazySingleton(() => ThemeCubit(sl()));
+  sl.registerLazySingleton(() => ContinueWatchingCubit(sl())..loadItems());
+
   
   // Consolidated MoviesBloc
   sl.registerLazySingleton(() => MoviesBloc(
