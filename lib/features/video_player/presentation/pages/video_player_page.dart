@@ -8,6 +8,7 @@ import 'package:video/style/enums.dart';
 import 'package:video/video.dart';
 
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/storage/local_storage.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/opensubtitles_service.dart';
 import '../../../../core/network/vidking_scraper.dart';
@@ -107,7 +108,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
     _completedSub = vidController.streams.onCompleted.listen((completed) {
       if (completed && mounted && widget.mediaType == 'tv' && !_isAutoAdvancing) {
-        _playNextEpisode();
+        if (sl<LocalStorage>().isAutoNextEnabled()) {
+          _playNextEpisode();
+        }
       }
     });
 
