@@ -19,7 +19,6 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_cubit.dart';
 import 'features/video_player/presentation/cubits/continue_watching_cubit.dart';
 
-
 final shortcuts = {
   if (Device.isTv) ...{
     if (Device.isDesktop)
@@ -42,7 +41,7 @@ final shortcuts = {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Device.ensureInitialized(debugTvMode: true);
+  Device.ensureInitialized();
   MediaKit.ensureInitialized();
 
   await Video.initialize({
@@ -100,9 +99,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<ThemeCubit>(
-          create: (context) => di.sl<ThemeCubit>(),
-        ),
+        BlocProvider<ThemeCubit>(create: (context) => di.sl<ThemeCubit>()),
         BlocProvider<ContinueWatchingCubit>(
           create: (context) => di.sl<ContinueWatchingCubit>(),
         ),
@@ -123,4 +120,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

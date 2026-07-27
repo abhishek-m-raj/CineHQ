@@ -1,87 +1,87 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class MediaTypeSwitcher extends StatelessWidget {
+class MediaTypeSwitcher extends StatefulWidget {
   final bool isMoviesActive;
   final ValueChanged<bool> onChanged;
+  final FocusNode? focusNode;
 
   const MediaTypeSwitcher({
     super.key,
     required this.isMoviesActive,
     required this.onChanged,
+    this.focusNode,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _MediaTypeTabTile(
-          label: 'MOVIES',
-          isSelected: isMoviesActive,
-          onTap: () {
-            if (!isMoviesActive) {
-              onChanged(true);
-            }
-          },
-        ),
-        const SizedBox(width: 6),
-        _MediaTypeTabTile(
-          label: 'SERIES',
-          isSelected: !isMoviesActive,
-          onTap: () {
-            if (isMoviesActive) {
-              onChanged(false);
-            }
-          },
-        ),
-      ],
-    );
-  }
+  State<MediaTypeSwitcher> createState() => _MediaTypeSwitcherState();
 }
 
-class _MediaTypeTabTile extends StatefulWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _MediaTypeTabTile({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  State<_MediaTypeTabTile> createState() => _MediaTypeTabTileState();
-}
-
-class _MediaTypeTabTileState extends State<_MediaTypeTabTile> {
-  late final FocusNode _focusNode;
+class _MediaTypeSwitcherState extends State<MediaTypeSwitcher> {
+  late FocusNode _focusNode;
+  bool _isInternalFocusNode = false;
   bool _isFocused = false;
   bool _isHovered = false;
 
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode(debugLabel: 'MediaTypeTab_${widget.label}');
-    _focusNode.addListener(_onFocusChange);
+    if (widget.focusNode != null) {
+      _focusNode = widget.focusNode!;
+      _isInternalFocusNode = false;
+    } else {
+      _focusNode = FocusNode(debugLabel: 'MediaTypeSwitcherSingle');
+      _isInternalFocusNode = true;
+    }
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(MediaTypeSwitcher oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.focusNode != oldWidget.focusNode) {
+      _focusNode.removeListener(_handleFocusChange);
+      if (_isInternalFocusNode) {
+        _focusNode.dispose();
+      }
+      if (widget.focusNode != null) {
+        _focusNode = widget.focusNode!;
+        _isInternalFocusNode = false;
+      } else {
+        _focusNode = FocusNode(debugLabel: 'MediaTypeSwitcherSingle');
+        _isInternalFocusNode = true;
+      }
+      _focusNode.addListener(_handleFocusChange);
+    }
+  }
+
+  void _handleFocusChange() {
+    if (_isFocused != _focusNode.hasFocus) {
+      setState(() {
+        _isFocused = _focusNode.hasFocus;
+      });
+    }
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
+    _focusNode.removeListener(_handleFocusChange);
+    if (_isInternalFocusNode) {
+      _focusNode.dispose();
+    }
     super.dispose();
   }
 
-  void _onFocusChange() {
-    setState(() => _isFocused = _focusNode.hasFocus);
+  void _toggle() {
+    widget.onChanged(!widget.isMoviesActive);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isActive = _isFocused || _isHovered;
+    final isMovies = widget.isMoviesActive;
+    final label = isMovies ? 'MOVIES' : 'SERIES';
+    final icon = isMovies ? Icons.movie_outlined : Icons.tv_outlined;
 
     return Focus(
       focusNode: _focusNode,
@@ -89,9 +89,9 @@ class _MediaTypeTabTileState extends State<_MediaTypeTabTile> {
         if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.select ||
               event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.gameButtonA ||
-              event.logicalKey == LogicalKeyboardKey.space) {
-            widget.onTap();
+              event.logicalKey == LogicalKeyboardKey.space ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            _toggle();
             return KeyEventResult.handled;
           }
         }
@@ -104,48 +104,88 @@ class _MediaTypeTabTileState extends State<_MediaTypeTabTile> {
         child: GestureDetector(
           onTap: () {
             _focusNode.requestFocus();
-            widget.onTap();
+            _toggle();
           },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: widget.isSelected
-                  ? theme.colorScheme.primary
-                  : (isActive
-                      ? theme.colorScheme.surfaceBright
-                      : theme.colorScheme.surfaceBright.withValues(alpha: 0.6)),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isActive
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedScale(
+            scale: _isFocused ? 1.06 : (_isHovered ? 1.03 : 1.0),
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOutCubic,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: _isFocused
                     ? theme.colorScheme.primary
-                    : (widget.isSelected
-                        ? Colors.transparent
-                        : theme.colorScheme.outline.withValues(alpha: 0.5)),
-                width: isActive ? 2 : 1,
+                    : (_isHovered
+                        ? theme.colorScheme.primary.withValues(alpha: 0.85)
+                        : theme.colorScheme.primary.withValues(alpha: 0.15)),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _isFocused || _isHovered
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.outline.withValues(alpha: 0.5),
+                  width: _isFocused ? 2.0 : 1.0,
+                ),
+                boxShadow: _isFocused
+                    ? [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : (_isHovered
+                        ? [
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                              blurRadius: 6,
+                            ),
+                          ]
+                        : []),
               ),
-              boxShadow: isActive
-                  ? [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.35),
-                        blurRadius: 8,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: ScaleTransition(scale: animation, child: child),
+                  );
+                },
+                child: Row(
+                  key: ValueKey<bool>(isMovies),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 16,
+                      color: (_isFocused || _isHovered)
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: (_isFocused || _isHovered)
+                            ? theme.colorScheme.onPrimary
+                            : theme.colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        letterSpacing: 0.8,
                       ),
-                    ]
-                  : [],
-            ),
-            child: Text(
-              widget.label,
-              style: TextStyle(
-                color: widget.isSelected
-                    ? theme.colorScheme.onPrimary
-                    : (isActive
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurface),
-                fontWeight: widget.isSelected || isActive
-                    ? FontWeight.bold
-                    : FontWeight.w600,
-                fontSize: 11,
-                letterSpacing: 0.6,
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.swap_horiz_rounded,
+                      size: 14,
+                      color: (_isFocused || _isHovered)
+                          ? theme.colorScheme.onPrimary.withValues(alpha: 0.8)
+                          : theme.colorScheme.primary.withValues(alpha: 0.7),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

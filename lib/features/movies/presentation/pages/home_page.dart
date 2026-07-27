@@ -85,32 +85,18 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'CINEHQ',
-              style: theme.textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.w900,
-                fontSize: 22,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(width: 12),
-            MediaTypeSwitcher(
-              isMoviesActive: _isMoviesActive,
-              onChanged: (isMovies) {
-                setState(() {
-                  _isMoviesActive = isMovies;
-                });
-              },
-            ),
-          ],
+        title: Text(
+          'CINEHQ',
+          style: theme.textTheme.headlineLarge?.copyWith(
+            fontWeight: FontWeight.w900,
+            fontSize: 22,
+            letterSpacing: 1.2,
+          ),
         ),
         actions: [
           if (isMock)
             Padding(
-              padding: const EdgeInsets.only(right: 16.0),
+              padding: const EdgeInsets.only(right: 8.0),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -128,6 +114,17 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: MediaTypeSwitcher(
+              isMoviesActive: _isMoviesActive,
+              onChanged: (isMovies) {
+                setState(() {
+                  _isMoviesActive = isMovies;
+                });
+              },
+            ),
+          ),
         ],
       ),
       body: RefreshIndicator(

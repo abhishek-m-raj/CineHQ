@@ -84,19 +84,18 @@ class _SearchPageState extends State<SearchPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'SEARCH',
-              style: theme.textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.w900,
-                fontSize: 22,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(width: 12),
-            MediaTypeSwitcher(
+        title: Text(
+          'SEARCH',
+          style: theme.textTheme.headlineLarge?.copyWith(
+            fontWeight: FontWeight.w900,
+            fontSize: 22,
+            letterSpacing: 1.2,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: MediaTypeSwitcher(
               isMoviesActive: _isMoviesActive,
               onChanged: (isMovies) {
                 setState(() {
@@ -105,8 +104,8 @@ class _SearchPageState extends State<SearchPage> {
                 _clearSearch();
               },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       body: Column(
         children: [
