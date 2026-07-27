@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:device/device.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,6 +7,8 @@ import 'package:video/style/enums.dart';
 import 'package:video/video.dart';
 
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/opensubtitles_service.dart';
 import '../../../../core/network/vidking_scraper.dart';
 
 class VideoPlayerPage extends StatefulWidget {
@@ -60,7 +63,48 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       }
     });
 
+    vidController.onSearchSubtitles = _searchSubtitles;
+    vidController.onDownloadSubtitle = _downloadSubtitle;
+
     _startScrapingAndPlay();
+  }
+
+  String? _cachedImdbId;
+
+  Future<List<Map<String, dynamic>>> _searchSubtitles(String query) async {
+    if (!mounted) return [];
+
+    if (_cachedImdbId == null) {
+      final service = OpenSubtitlesService(sl<Dio>());
+      _cachedImdbId = await service.fetchImdbId(
+        tmdbDio: sl<ApiClient>().dio,
+        tmdbId: widget.tmdbId,
+        mediaType: widget.mediaType,
+      );
+    }
+
+    if (_cachedImdbId == null) return [];
+
+    final service = OpenSubtitlesService(sl<Dio>());
+    final results = await service.search(imdbId: _cachedImdbId!);
+    return results.map((s) => {
+      'id': s.id,
+      'display': s.display,
+      'language': s.language,
+      'format': s.format,
+      'release': s.release,
+      'url': s.url,
+      'downloadCount': s.downloadCount,
+      'isHearingImpaired': s.isHearingImpaired,
+      'isTrusted': s.isTrusted,
+      'origin': s.origin,
+      'flagUrl': s.flagUrl,
+    }).toList();
+  }
+
+  Future<String?> _downloadSubtitle(String subtitleId) async {
+    final service = OpenSubtitlesService(sl<Dio>());
+    return service.downloadSubtitle(subtitleId);
   }
 
   Future<void> _startScrapingAndPlay() async {

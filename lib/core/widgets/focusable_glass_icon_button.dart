@@ -84,7 +84,6 @@ class _FocusableGlassIconButtonState extends State<FocusableGlassIconButton> {
     final isDark = theme.brightness == Brightness.dark;
     final isActive = _isFocused || _isHovered;
 
-    final primaryColor = theme.colorScheme.primary;
     final defaultBg = isDark
         ? Colors.white.withValues(alpha: 0.08)
         : Colors.black.withValues(alpha: 0.05);

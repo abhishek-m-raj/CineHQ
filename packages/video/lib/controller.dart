@@ -55,6 +55,8 @@ class Controller {
   late OverlayController episodeOverlayController;
   late OverlayController framesOverlayController;
   late final void Function() onBack;
+  Future<List<Map<String, dynamic>>> Function(String query)? onSearchSubtitles;
+  Future<String?> Function(String subtitleId)? onDownloadSubtitle;
 
   String? coverImg;
   Uint8List? thumbnailVtt;
