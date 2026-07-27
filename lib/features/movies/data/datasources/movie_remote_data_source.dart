@@ -11,6 +11,7 @@ abstract class MovieRemoteDataSource {
   Future<List<MovieModel>> getTopRatedMovies();
   Future<MovieDetailModel> getMovieDetails(int id);
   Future<List<MovieModel>> searchMovies(String query);
+  Future<List<MovieModel>> getMovieRecommendations(int id);
 }
 
 class MovieRemoteDataSourceImpl implements MovieRemoteDataSource {
@@ -55,6 +56,21 @@ class MovieRemoteDataSourceImpl implements MovieRemoteDataSource {
       queryParameters: {'query': query},
     );
     return _parseMovieList(response.data);
+  }
+
+  @override
+  Future<List<MovieModel>> getMovieRecommendations(int id) async {
+    try {
+      final response = await _apiClient.dio.get('/movie/$id/recommendations');
+      final list = _parseMovieList(response.data);
+      if (list.isNotEmpty) return list;
+    } catch (_) {}
+    try {
+      final response = await _apiClient.dio.get('/movie/$id/similar');
+      return _parseMovieList(response.data);
+    } catch (_) {
+      return [];
+    }
   }
 
   List<MovieModel> _parseMovieList(dynamic data) {
@@ -109,6 +125,12 @@ class MockMovieRemoteDataSourceImpl implements MovieRemoteDataSource {
     return allMovies
         .where((m) => m.title.toLowerCase().contains(query.toLowerCase()))
         .toList();
+  }
+
+  @override
+  Future<List<MovieModel>> getMovieRecommendations(int id) async {
+    await _simulateDelay();
+    return _mockPopular;
   }
 
   // --- MOCK DATA DATASETS ---
@@ -474,4 +496,7 @@ class DynamicMovieRemoteDataSourceImpl implements MovieRemoteDataSource {
 
   @override
   Future<List<MovieModel>> searchMovies(String query) => _activeDataSource.searchMovies(query);
+
+  @override
+  Future<List<MovieModel>> getMovieRecommendations(int id) => _activeDataSource.getMovieRecommendations(id);
 }

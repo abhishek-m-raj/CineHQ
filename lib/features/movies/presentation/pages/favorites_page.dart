@@ -108,12 +108,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
         }
         return GridView.builder(
           padding: const EdgeInsets.all(16),
+          clipBehavior: Clip.none,
           physics: const BouncingScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 2 / 3.2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 140,
+            childAspectRatio: 130 / 237,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 14,
           ),
           itemCount: favoriteIds.length,
           itemBuilder: (context, index) {
@@ -134,12 +135,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
         }
         return GridView.builder(
           padding: const EdgeInsets.all(16),
+          clipBehavior: Clip.none,
           physics: const BouncingScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 2 / 3.2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 140,
+            childAspectRatio: 130 / 237,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 14,
           ),
           itemCount: favoriteIds.length,
           itemBuilder: (context, index) {

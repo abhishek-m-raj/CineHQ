@@ -47,6 +47,7 @@ dependencies:
   cached_network_image: ^3.3.1
   google_fonts: ^8.1.0
   shimmer: ^3.0.0
+  flutter_animate: ^4.5.2
   smooth_page_indicator: ^1.2.0
   talker_flutter: ^5.1.19
   talker_dio_logger: ^5.1.19

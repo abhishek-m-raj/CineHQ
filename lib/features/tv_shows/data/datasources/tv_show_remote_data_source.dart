@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../models/tv_show_model.dart';
 import '../models/tv_show_detail_model.dart';
+import '../models/episode_model.dart';
 import '../../../movies/data/models/genre_model.dart';
 import '../../../../core/network/api_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -11,6 +12,8 @@ abstract class TVShowRemoteDataSource {
   Future<List<TVShowModel>> getTopRatedTVShows();
   Future<TVShowDetailModel> getTVShowDetails(int id);
   Future<List<TVShowModel>> searchTVShows(String query);
+  Future<List<EpisodeModel>> getSeasonEpisodes(int tvShowId, int seasonNumber);
+  Future<List<TVShowModel>> getTVShowRecommendations(int id);
 }
 
 class TVShowRemoteDataSourceImpl implements TVShowRemoteDataSource {
@@ -55,6 +58,35 @@ class TVShowRemoteDataSourceImpl implements TVShowRemoteDataSource {
       queryParameters: {'query': query},
     );
     return _parseTVShowList(response.data);
+  }
+
+  @override
+  Future<List<TVShowModel>> getTVShowRecommendations(int id) async {
+    try {
+      final response = await _apiClient.dio.get('/tv/$id/recommendations');
+      final list = _parseTVShowList(response.data);
+      if (list.isNotEmpty) return list;
+    } catch (_) {}
+    try {
+      final response = await _apiClient.dio.get('/tv/$id/similar');
+      return _parseTVShowList(response.data);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<List<EpisodeModel>> getSeasonEpisodes(int tvShowId, int seasonNumber) async {
+    try {
+      final response = await _apiClient.dio.get('/tv/$tvShowId/season/$seasonNumber');
+      final episodes = response.data['episodes'] as List<dynamic>?;
+      if (episodes == null) return [];
+      return episodes
+          .map((e) => EpisodeModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   List<TVShowModel> _parseTVShowList(dynamic data) {
@@ -108,6 +140,12 @@ class MockTVShowRemoteDataSourceImpl implements TVShowRemoteDataSource {
     return allShows
         .where((s) => s.name.toLowerCase().contains(query.toLowerCase()))
         .toList();
+  }
+
+  @override
+  Future<List<TVShowModel>> getTVShowRecommendations(int id) async {
+    await _simulateDelay();
+    return _mockPopular;
   }
 
   // --- MOCK TV SHOW DATASETS ---
@@ -444,12 +482,29 @@ class MockTVShowRemoteDataSourceImpl implements TVShowRemoteDataSource {
       tagline: 'A new sleuth for the 21st century.',
     ),
   ];
+
+  @override
+  Future<List<EpisodeModel>> getSeasonEpisodes(int tvShowId, int seasonNumber) async {
+    await _simulateDelay();
+    return List.generate(10, (index) {
+      final epNum = index + 1;
+      return EpisodeModel(
+        episodeNumber: epNum,
+        name: 'Episode $epNum',
+        overview: 'Official overview for episode $epNum of season $seasonNumber.',
+        stillPath: null,
+        airDate: '2024-01-01',
+        runtime: 45,
+        voteAverage: 8.0,
+      );
+    });
+  }
 }
 
 class DynamicTVShowRemoteDataSourceImpl implements TVShowRemoteDataSource {
   final ApiClient _apiClient;
   late final TVShowRemoteDataSource _realDataSource;
-  late final TVShowRemoteDataSource _mockDataSource;
+  late final MockTVShowRemoteDataSourceImpl _mockDataSource;
 
   DynamicTVShowRemoteDataSourceImpl(this._apiClient) {
     _realDataSource = TVShowRemoteDataSourceImpl(_apiClient);
@@ -479,4 +534,16 @@ class DynamicTVShowRemoteDataSourceImpl implements TVShowRemoteDataSource {
 
   @override
   Future<List<TVShowModel>> searchTVShows(String query) => _activeDataSource.searchTVShows(query);
+
+  @override
+  Future<List<EpisodeModel>> getSeasonEpisodes(int tvShowId, int seasonNumber) async {
+    final episodes = await _activeDataSource.getSeasonEpisodes(tvShowId, seasonNumber);
+    if (episodes.isEmpty && _activeDataSource is! MockTVShowRemoteDataSourceImpl) {
+      return _mockDataSource.getSeasonEpisodes(tvShowId, seasonNumber);
+    }
+    return episodes;
+  }
+
+  @override
+  Future<List<TVShowModel>> getTVShowRecommendations(int id) => _activeDataSource.getTVShowRecommendations(id);
 }

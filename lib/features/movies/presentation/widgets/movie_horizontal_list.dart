@@ -7,17 +7,22 @@ class MovieHorizontalList extends StatelessWidget {
   final List<Movie> movies;
   final String title;
   final Function(Movie) onMovieTap;
+  final EdgeInsetsGeometry? padding;
+  final bool showBarIndicator;
 
   const MovieHorizontalList({
     super.key,
     required this.movies,
     required this.title,
     required this.onMovieTap,
+    this.padding,
+    this.showBarIndicator = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: 16.0);
     
     if (movies.isEmpty) return const SizedBox.shrink();
 
@@ -25,23 +30,46 @@ class MovieHorizontalList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Text(
-            title.toUpperCase(),
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              fontSize: 14,
-              letterSpacing: 1.0,
-            ),
-          ),
+          padding: effectivePadding,
+          child: showBarIndicator
+              ? Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      title.toUpperCase(),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                )
+              : Text(
+                  title.toUpperCase(),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    letterSpacing: 1.0,
+                  ),
+                ),
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 240,
+          height: 255,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: movies.length,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: effectivePadding,
+            clipBehavior: Clip.none,
             physics: const BouncingScrollPhysics(),
             itemBuilder: (context, index) {
               final movie = movies[index];
@@ -63,21 +91,24 @@ class MovieHorizontalList extends StatelessWidget {
 
 class MovieHorizontalListSkeleton extends StatelessWidget {
   final String title;
+  final EdgeInsets? padding;
 
   const MovieHorizontalListSkeleton({
     super.key,
     required this.title,
+    this.padding,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0);
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: EdgeInsets.symmetric(horizontal: effectivePadding.left),
           child: Text(
             title.toUpperCase(),
             style: theme.textTheme.titleMedium?.copyWith(
@@ -89,12 +120,13 @@ class MovieHorizontalListSkeleton extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 240,
+          height: 255,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: 4,
+            itemCount: 10,
             physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: effectivePadding,
+            clipBehavior: Clip.none,
             itemBuilder: (context, index) {
               return Container(
                 width: 130,
@@ -105,14 +137,14 @@ class MovieHorizontalListSkeleton extends StatelessWidget {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: theme.colorScheme.outline,
+                            color: theme.colorScheme.outline.withValues(alpha: 0.25),
                             width: 1,
                           ),
                         ),
                         child: const ClipRRect(
-                          borderRadius: BorderRadius.all(Radius.circular(3)),
+                          borderRadius: BorderRadius.all(Radius.circular(9)),
                           child: ShimmerLoading(
                             width: double.infinity,
                             height: double.infinity,

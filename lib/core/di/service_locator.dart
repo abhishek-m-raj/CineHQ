@@ -29,9 +29,13 @@ import '../../features/tv_shows/domain/usecases/get_popular_tv_shows.dart';
 import '../../features/tv_shows/domain/usecases/get_top_rated_tv_shows.dart';
 import '../../features/tv_shows/domain/usecases/get_tv_show_details.dart';
 import '../../features/tv_shows/domain/usecases/search_tv_shows.dart';
+import '../../features/tv_shows/domain/usecases/get_season_episodes.dart';
 import '../../features/tv_shows/presentation/blocs/tv_shows_bloc.dart';
 import '../../features/tv_shows/presentation/cubits/tv_show_detail_cubit.dart';
 import '../../features/tv_shows/presentation/cubits/tv_favorites_cubit.dart';
+
+import '../../features/movies/domain/usecases/get_movie_recommendations.dart';
+import '../../features/tv_shows/domain/usecases/get_tv_show_recommendations.dart';
 
 // Presentation Blocs/Cubits
 import '../theme/theme_cubit.dart';
@@ -75,12 +79,15 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetTopRatedMovies(sl()));
   sl.registerLazySingleton(() => GetMovieDetails(sl()));
   sl.registerLazySingleton(() => SearchMovies(sl()));
+  sl.registerLazySingleton(() => GetMovieRecommendations(sl()));
 
   sl.registerLazySingleton(() => GetAiringTodayTVShows(sl()));
   sl.registerLazySingleton(() => GetPopularTVShows(sl()));
   sl.registerLazySingleton(() => GetTopRatedTVShows(sl()));
   sl.registerLazySingleton(() => GetTVShowDetails(sl()));
   sl.registerLazySingleton(() => SearchTVShows(sl()));
+  sl.registerLazySingleton(() => GetSeasonEpisodes(sl()));
+  sl.registerLazySingleton(() => GetTVShowRecommendations(sl()));
 
   // Presentation Layer - Blocs & Cubits
   sl.registerLazySingleton(() => ThemeCubit(sl()));

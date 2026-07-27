@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../../domain/repositories/tv_show_repository.dart';
 import '../../domain/entities/tv_show.dart';
 import '../../domain/entities/tv_show_detail.dart';
+import '../../domain/entities/episode.dart';
 import '../datasources/tv_show_remote_data_source.dart';
 import '../../../../core/errors/failure.dart';
 
@@ -58,6 +59,28 @@ class TVShowRepositoryImpl implements TVShowRepository {
   Future<List<TVShow>> searchTVShows(String query) async {
     try {
       return await _remoteDataSource.searchTVShows(query);
+    } on DioException catch (e) {
+      throw ServerFailure(_handleDioError(e));
+    } catch (e) {
+      throw ServerFailure(e.toString());
+    }
+  }
+
+  @override
+  Future<List<Episode>> getSeasonEpisodes(int tvShowId, int seasonNumber) async {
+    try {
+      return await _remoteDataSource.getSeasonEpisodes(tvShowId, seasonNumber);
+    } on DioException catch (e) {
+      throw ServerFailure(_handleDioError(e));
+    } catch (e) {
+      throw ServerFailure(e.toString());
+    }
+  }
+
+  @override
+  Future<List<TVShow>> getTVShowRecommendations(int id) async {
+    try {
+      return await _remoteDataSource.getTVShowRecommendations(id);
     } on DioException catch (e) {
       throw ServerFailure(_handleDioError(e));
     } catch (e) {

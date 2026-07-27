@@ -65,6 +65,17 @@ class MovieRepositoryImpl implements MovieRepository {
     }
   }
 
+  @override
+  Future<List<Movie>> getMovieRecommendations(int id) async {
+    try {
+      return await _remoteDataSource.getMovieRecommendations(id);
+    } on DioException catch (e) {
+      throw ServerFailure(_handleDioError(e));
+    } catch (e) {
+      throw ServerFailure(e.toString());
+    }
+  }
+
   String _handleDioError(DioException error) {
     if (error.response?.statusCode == 401) {
       return 'Invalid API Key. Please verify your TMDB credentials in settings.';
