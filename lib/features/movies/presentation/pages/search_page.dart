@@ -84,13 +84,12 @@ class _SearchPageState extends State<SearchPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'SEARCH',
-          style: theme.textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w900,
-            fontSize: 22,
-            letterSpacing: 1.2,
-          ),
+        titleSpacing: 20,
+        title: Image.asset(
+          'assets/logo_banner.png',
+          height: 50,
+          fit: BoxFit.contain,
+          alignment: Alignment.centerLeft,
         ),
         actions: [
           Padding(
@@ -121,14 +120,18 @@ class _SearchPageState extends State<SearchPage> {
                 _onSearchChanged(val);
                 setState(() {});
               },
-              hintText: _isMoviesActive ? 'Search movies...' : 'Search TV shows...',
+              hintText: _isMoviesActive
+                  ? 'Search movies...'
+                  : 'Search TV shows...',
               icon: CineIcons.search,
             ),
           ),
 
           // Search results or Suggestions
           Expanded(
-            child: _isMoviesActive ? _buildMoviesSearchBody(theme) : _buildTVShowsSearchBody(theme),
+            child: _isMoviesActive
+                ? _buildMoviesSearchBody(theme)
+                : _buildTVShowsSearchBody(theme),
           ),
         ],
       ),
@@ -138,7 +141,8 @@ class _SearchPageState extends State<SearchPage> {
   Widget _buildMoviesSearchBody(ThemeData theme) {
     return BlocBuilder<MoviesBloc, MoviesState>(
       bloc: _moviesBloc,
-      buildWhen: (previous, current) => previous.searchState != current.searchState,
+      buildWhen: (previous, current) =>
+          previous.searchState != current.searchState,
       builder: (context, state) {
         final searchState = state.searchState;
         if (searchState is MovieSearchInitial) {
@@ -180,7 +184,8 @@ class _SearchPageState extends State<SearchPage> {
   Widget _buildTVShowsSearchBody(ThemeData theme) {
     return BlocBuilder<TVShowsBloc, TVShowsState>(
       bloc: _tvShowsBloc,
-      buildWhen: (previous, current) => previous.searchState != current.searchState,
+      buildWhen: (previous, current) =>
+          previous.searchState != current.searchState,
       builder: (context, state) {
         final searchState = state.searchState;
         if (searchState is TVShowSearchInitial) {
@@ -284,7 +289,9 @@ class _SearchPageState extends State<SearchPage> {
                 },
                 backgroundColor: theme.colorScheme.surface,
                 side: BorderSide(color: theme.colorScheme.outline),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
                 labelStyle: theme.textTheme.labelSmall?.copyWith(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
@@ -321,7 +328,10 @@ class _SearchPageState extends State<SearchPage> {
                 ),
                 child: const ClipRRect(
                   borderRadius: BorderRadius.all(Radius.circular(3)),
-                  child: ShimmerLoading(width: double.infinity, height: double.infinity),
+                  child: ShimmerLoading(
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
                 ),
               ),
             ),

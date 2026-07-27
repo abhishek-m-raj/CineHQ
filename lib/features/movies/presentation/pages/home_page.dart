@@ -18,9 +18,6 @@ import '../../../tv_shows/presentation/widgets/tv_show_spotlights.dart';
 import '../../../tv_shows/presentation/widgets/tv_show_horizontal_list.dart';
 import '../../../video_player/presentation/widgets/continue_watching_section.dart';
 
-
-
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -72,7 +69,7 @@ class _HomePageState extends State<HomePage> {
       _tvShowsBloc.add(const LoadPopularTVShowsEvent());
       _tvShowsBloc.add(const LoadTopRatedTVShowsEvent());
     }
-    
+
     // Allow standard delay
     await Future.delayed(const Duration(milliseconds: 300));
   }
@@ -85,13 +82,12 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'CINEHQ',
-          style: theme.textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w900,
-            fontSize: 22,
-            letterSpacing: 1.2,
-          ),
+        titleSpacing: 20,
+        title: Image.asset(
+          'assets/logo_banner.png',
+          height: 50,
+          fit: BoxFit.contain,
+          alignment: Alignment.centerLeft,
         ),
         actions: [
           if (isMock)
@@ -100,7 +96,9 @@ class _HomePageState extends State<HomePage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: theme.colorScheme.secondary.withValues(alpha: 0.5),
+                  ),
                   borderRadius: BorderRadius.circular(2),
                 ),
                 child: Text(
@@ -138,7 +136,10 @@ class _HomePageState extends State<HomePage> {
             children: [
               const SizedBox(height: 16),
               // Conditional Display depending on selection
-              if (_isMoviesActive) ..._buildMoviesContent(theme) else ..._buildTVShowsContent(theme),
+              if (_isMoviesActive)
+                ..._buildMoviesContent(theme)
+              else
+                ..._buildTVShowsContent(theme),
             ],
           ),
         ),
@@ -151,7 +152,8 @@ class _HomePageState extends State<HomePage> {
       // Featured Section
       BlocBuilder<MoviesBloc, MoviesState>(
         bloc: _moviesBloc,
-        buildWhen: (previous, current) => previous.nowPlayingState != current.nowPlayingState,
+        buildWhen: (previous, current) =>
+            previous.nowPlayingState != current.nowPlayingState,
         builder: (context, state) {
           final nowPlayingState = state.nowPlayingState;
           if (nowPlayingState is MoviesListLoading) {
@@ -174,7 +176,8 @@ class _HomePageState extends State<HomePage> {
       // Popular Section
       BlocBuilder<MoviesBloc, MoviesState>(
         bloc: _moviesBloc,
-        buildWhen: (previous, current) => previous.popularState != current.popularState,
+        buildWhen: (previous, current) =>
+            previous.popularState != current.popularState,
         builder: (context, state) {
           final popularState = state.popularState;
           if (popularState is MoviesListLoading) {
@@ -197,7 +200,8 @@ class _HomePageState extends State<HomePage> {
       // Top Rated Section
       BlocBuilder<MoviesBloc, MoviesState>(
         bloc: _moviesBloc,
-        buildWhen: (previous, current) => previous.topRatedState != current.topRatedState,
+        buildWhen: (previous, current) =>
+            previous.topRatedState != current.topRatedState,
         builder: (context, state) {
           final topRatedState = state.topRatedState;
           if (topRatedState is MoviesListLoading) {
@@ -225,7 +229,8 @@ class _HomePageState extends State<HomePage> {
       // Featured TV Shows
       BlocBuilder<TVShowsBloc, TVShowsState>(
         bloc: _tvShowsBloc,
-        buildWhen: (previous, current) => previous.airingTodayState != current.airingTodayState,
+        buildWhen: (previous, current) =>
+            previous.airingTodayState != current.airingTodayState,
         builder: (context, state) {
           final airingTodayState = state.airingTodayState;
           if (airingTodayState is TVShowsListLoading) {
@@ -248,11 +253,14 @@ class _HomePageState extends State<HomePage> {
       // Popular TV Shows
       BlocBuilder<TVShowsBloc, TVShowsState>(
         bloc: _tvShowsBloc,
-        buildWhen: (previous, current) => previous.popularState != current.popularState,
+        buildWhen: (previous, current) =>
+            previous.popularState != current.popularState,
         builder: (context, state) {
           final popularState = state.popularState;
           if (popularState is TVShowsListLoading) {
-            return const TVShowHorizontalListSkeleton(title: 'POPULAR TV SHOWS');
+            return const TVShowHorizontalListSkeleton(
+              title: 'POPULAR TV SHOWS',
+            );
           } else if (popularState is TVShowsListLoaded) {
             return TVShowHorizontalList(
               tvShows: popularState.tvShows,
@@ -271,11 +279,14 @@ class _HomePageState extends State<HomePage> {
       // Top Rated TV Shows
       BlocBuilder<TVShowsBloc, TVShowsState>(
         bloc: _tvShowsBloc,
-        buildWhen: (previous, current) => previous.topRatedState != current.topRatedState,
+        buildWhen: (previous, current) =>
+            previous.topRatedState != current.topRatedState,
         builder: (context, state) {
           final topRatedState = state.topRatedState;
           if (topRatedState is TVShowsListLoading) {
-            return const TVShowHorizontalListSkeleton(title: 'TOP RATED TV SHOWS');
+            return const TVShowHorizontalListSkeleton(
+              title: 'TOP RATED TV SHOWS',
+            );
           } else if (topRatedState is TVShowsListLoaded) {
             return TVShowHorizontalList(
               tvShows: topRatedState.tvShows,
@@ -293,7 +304,6 @@ class _HomePageState extends State<HomePage> {
       const SizedBox(height: 32),
     ];
   }
-
 
   Widget _buildHeroSkeleton(ThemeData theme) {
     return Column(
@@ -329,7 +339,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildErrorWidget(ThemeData theme, String message, VoidCallback onRetry) {
+  Widget _buildErrorWidget(
+    ThemeData theme,
+    String message,
+    VoidCallback onRetry,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
       child: Container(
@@ -360,9 +374,14 @@ class _HomePageState extends State<HomePage> {
             OutlinedButton(
               onPressed: onRetry,
               style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(2),
+                ),
                 side: BorderSide(color: theme.colorScheme.primary),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
               ),
               child: Text(
                 'RETRY',
