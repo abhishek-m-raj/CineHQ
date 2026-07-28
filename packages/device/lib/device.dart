@@ -7,15 +7,19 @@ import 'package:universal_platform/universal_platform.dart';
 import 'enums.dart';
 
 final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-late AndroidDeviceInfo? androidInfo;
-late bool isDebugTvMode;
+AndroidDeviceInfo? androidInfo;
+bool isDebugTvMode = false;
 
 class Device {
   static Future<void> ensureInitialized({bool debugTvMode = false}) async {
-    if (isAndroid && !isWeb) {
-      androidInfo = await deviceInfo.androidInfo;
-    }
     isDebugTvMode = debugTvMode;
+    if (isAndroid && !isWeb) {
+      try {
+        androidInfo = await deviceInfo.androidInfo;
+      } catch (_) {
+        androidInfo = null;
+      }
+    }
   }
 
   static PlatformType get value {
@@ -41,17 +45,19 @@ class Device {
 
   static bool get isTv {
     if (isAndroid && !isWeb) {
-      return androidInfo!.systemFeatures.contains('android.software.leanback');
+      return androidInfo?.systemFeatures.contains('android.software.leanback') ?? isDebugTvMode;
     } else {
       return isDebugTvMode;
     }
   }
 
   static bool get isTablet {
-    if (!isAndroid || !isIOS) {
+    if (!isAndroid && !isIOS) {
       return false;
     }
-    final data = WidgetsBinding.instance.platformDispatcher.views.first;
-    return data.display.size.shortestSide <= mobileWidth ? false : true;
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isEmpty) return false;
+    final data = views.first;
+    return data.display.size.shortestSide > mobileWidth;
   }
 }

@@ -105,6 +105,7 @@ class OfficialPlayerState implements PlayerState {
 /// the platform's native decoder as shipped with the `video_player` package
 /// (ExoPlayer on Android, AVPlayer on iOS/macOS, etc.).
 class OfficialPlayer implements Player {
+  bool _isDisposed = false;
   int _openOperationId = 0;
   VideoPlayerController? _controller;
   final _controllerNotifier = ValueNotifier<VideoPlayerController?>(null);
@@ -185,6 +186,7 @@ class OfficialPlayer implements Player {
   PlayerState get state => _state;
 
   void _controllerListener() {
+    if (_isDisposed) return;
     final controller = _controller;
     if (controller == null) return;
 
@@ -405,23 +407,22 @@ class OfficialPlayer implements Player {
     _controller = controller;
     _controllerNotifier.value = controller;
 
-    controller
-        .initialize()
-        .then((_) {
-          if (_controller == controller && operationId == _openOperationId) {
-            controller.addListener(_controllerListener);
-            _controllerListener();
-            if (play) {
-              controller.play();
-            }
-          } else {
-            controller.dispose();
-          }
-        })
-        .catchError((e) {
-          debugPrint('[OfficialPlayer] Error initializing VideoPlayerController: $e');
-          _errorStreamController.add(e);
-        });
+    try {
+      await controller.initialize();
+      if (_controller == controller && operationId == _openOperationId) {
+        controller.addListener(_controllerListener);
+        _controllerListener();
+        if (play) {
+          await controller.play();
+        }
+      } else {
+        await controller.dispose();
+      }
+    } catch (e) {
+      debugPrint('[OfficialPlayer] Error initializing VideoPlayerController: $e');
+      _errorStreamController.add(e);
+      rethrow;
+    }
   }
 
   @override
@@ -435,6 +436,9 @@ class OfficialPlayer implements Player {
 
   @override
   Future<void> dispose() async {
+    if (_isDisposed) return;
+    _isDisposed = true;
+
     _openOperationId++;
     if (_fullscreenRoute != null && _fullscreenRoute!.isCurrent) {
       _fullscreenRoute!.navigator?.pop();
@@ -442,10 +446,11 @@ class OfficialPlayer implements Player {
     _fullscreenRoute = null;
     final oldController = _controller;
     _controller = null;
-    _controllerNotifier.value = null;
     oldController?.removeListener(_controllerListener);
     await oldController?.dispose();
+
     _fullscreenNotifier.dispose();
+    _controllerNotifier.dispose();
 
     await _positionStreamController.close();
     await _durationStreamController.close();

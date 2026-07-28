@@ -10,7 +10,7 @@ import 'package:cinehq/core/di/service_locator.dart' as di;
 void main() {
   setUp(() async {
     // Initialize Device package
-    Device.ensureInitialized(debugTvMode: false);
+    await Device.ensureInitialized(debugTvMode: false);
 
     // Mock shared preferences channel
     SharedPreferences.setMockInitialValues({});

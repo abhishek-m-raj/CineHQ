@@ -59,6 +59,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   String? _errorMessage;
   StreamSubscription<bool>? _completedSub;
   StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<dynamic>? _errorSub;
   bool _isAutoAdvancing = false;
   int? _lastSavedSecond;
   String? _resumedTimeText;
@@ -111,6 +112,15 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         if (sl<LocalStorage>().isAutoNextEnabled()) {
           _playNextEpisode();
         }
+      }
+    });
+
+    _errorSub = vidController.player.stream.error.listen((err) {
+      if (mounted && _errorMessage == null) {
+        setState(() {
+          _errorMessage = err.toString().replaceAll('Exception: ', '');
+        });
+        vidController.setVideoInfo(loading: false);
       }
     });
 
@@ -462,6 +472,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     _saveCurrentProgress();
     _positionSub?.cancel();
     _completedSub?.cancel();
+    _errorSub?.cancel();
     if (vidController.isFullscreen) {
       vidController.exFullscreen();
     }
@@ -548,60 +559,44 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             if (_errorMessage != null)
               Container(
                 color: Colors.black.withValues(alpha: 0.90),
-                padding: const EdgeInsets.all(24),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline_sharp,
-                        color: Colors.redAccent,
-                        size: 48,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Failed to Stream Video',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                alignment: Alignment.center,
+                child: AlertDialog(
+                  backgroundColor: const Color(0xFF1E1E1E),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: const Text(
+                    'Playback Error',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                  content: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                  actions: [
+                    ElevatedButton(
+                      autofocus: true,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _errorMessage!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      onPressed: () {
+                        if (mounted) {
+                          setState(() {
+                            _errorMessage = null;
+                          });
+                        }
+                      },
+                      child: const Text(
+                        'OK',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: () {
-                              if (mounted) {
-                                context.pop();
-                              }
-                            },
-                            icon: const Icon(Icons.arrow_back, color: Colors.white),
-                            label: const Text('Go Back', style: TextStyle(color: Colors.white)),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.white30),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          ElevatedButton.icon(
-                            onPressed: _startScrapingAndPlay,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Try Again'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: theme.colorScheme.primary,
-                              foregroundColor: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
           ],
