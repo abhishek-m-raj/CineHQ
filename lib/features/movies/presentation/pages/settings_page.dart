@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cineui/cineui.dart';
 
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/storage/local_storage.dart';
@@ -16,6 +17,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late bool _autoNextEnabled;
   late bool _onlyEnglishSubtitlesEnabled;
+  late String _defaultResolution;
   final LocalStorage _localStorage = sl<LocalStorage>();
 
   @override
@@ -23,6 +25,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _autoNextEnabled = _localStorage.isAutoNextEnabled();
     _onlyEnglishSubtitlesEnabled = _localStorage.isOnlyEnglishSubtitlesEnabled();
+    _defaultResolution = _localStorage.getDefaultResolution();
   }
 
   @override
@@ -46,7 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Playback Preferences Section (Auto Next & Subtitles)
+            // Playback Preferences Section (Auto Next, Subtitles, Resolution)
             _buildSectionHeader(theme, 'PLAYBACK PREFERENCES'),
             const SizedBox(height: 12),
             Container(
@@ -135,6 +138,54 @@ class _SettingsPageState extends State<SettingsPage> {
                         _onlyEnglishSubtitlesEnabled = value;
                       });
                       await _localStorage.setOnlyEnglishSubtitlesEnabled(value);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: theme.colorScheme.outline),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'DEFAULT VIDEO RESOLUTION',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Preferred resolution tried first during playback. If unavailable, best alternative is picked.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.secondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  CineDropDown<String>(
+                    width: 95,
+                    hintText: 'Resolution',
+                    items: const ['1080p', '720p', '480p', '360p', 'Auto'],
+                    initialItem: _defaultResolution,
+                    onChange: (String newValue) async {
+                      setState(() {
+                        _defaultResolution = newValue;
+                      });
+                      await _localStorage.setDefaultResolution(newValue);
                     },
                   ),
                 ],

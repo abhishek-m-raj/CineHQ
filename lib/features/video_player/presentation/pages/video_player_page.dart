@@ -428,7 +428,33 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         }
       }
 
+      final preferredRes = sl<LocalStorage>().getDefaultResolution();
+      int? targetRes;
+      if (preferredRes != 'Auto') {
+        targetRes = int.tryParse(preferredRes.replaceAll(RegExp(r'\D'), ''));
+      }
+
       final sortedKeys = qualityMap.keys.toList()..sort((a, b) => b.compareTo(a));
+      if (targetRes != null && sortedKeys.isNotEmpty) {
+        int? matchKey;
+        if (qualityMap.containsKey(targetRes)) {
+          matchKey = targetRes;
+        } else {
+          int minDiff = 99999;
+          for (final k in sortedKeys) {
+            final diff = (k - targetRes).abs();
+            if (diff < minDiff) {
+              minDiff = diff;
+              matchKey = k;
+            }
+          }
+        }
+        if (matchKey != null) {
+          sortedKeys.remove(matchKey);
+          sortedKeys.insert(0, matchKey);
+        }
+      }
+
       Map<int, String> sortedQualityMap = {
         for (var k in sortedKeys) k: qualityMap[k]!
       };

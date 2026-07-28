@@ -58,6 +58,7 @@ class LocalStorage {
   static const _continueWatchingKey = 'continue_watching_list';
   static const _autoNextKey = 'auto_next_episode';
   static const _onlyEnglishSubtitlesKey = 'only_english_subtitles';
+  static const _defaultResolutionKey = 'default_resolution';
 
   List<String> getContinueWatchingRawList() {
     return _prefs.getStringList(_continueWatchingKey) ?? [];
@@ -85,6 +86,14 @@ class LocalStorage {
 
   Future<void> setOnlyEnglishSubtitlesEnabled(bool enabled) async {
     await _prefs.setBool(_onlyEnglishSubtitlesKey, enabled);
+  }
+
+  String getDefaultResolution() {
+    return _prefs.getString(_defaultResolutionKey) ?? '1080p';
+  }
+
+  Future<void> setDefaultResolution(String resolution) async {
+    await _prefs.setString(_defaultResolutionKey, resolution);
   }
 }
 
