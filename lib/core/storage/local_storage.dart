@@ -57,6 +57,7 @@ class LocalStorage {
 
   static const _continueWatchingKey = 'continue_watching_list';
   static const _autoNextKey = 'auto_next_episode';
+  static const _onlyEnglishSubtitlesKey = 'only_english_subtitles';
 
   List<String> getContinueWatchingRawList() {
     return _prefs.getStringList(_continueWatchingKey) ?? [];
@@ -76,6 +77,14 @@ class LocalStorage {
 
   Future<void> setAutoNextEnabled(bool enabled) async {
     await _prefs.setBool(_autoNextKey, enabled);
+  }
+
+  bool isOnlyEnglishSubtitlesEnabled() {
+    return _prefs.getBool(_onlyEnglishSubtitlesKey) ?? true;
+  }
+
+  Future<void> setOnlyEnglishSubtitlesEnabled(bool enabled) async {
+    await _prefs.setBool(_onlyEnglishSubtitlesKey, enabled);
   }
 }
 

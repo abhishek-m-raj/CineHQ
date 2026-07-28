@@ -15,12 +15,14 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   late bool _autoNextEnabled;
+  late bool _onlyEnglishSubtitlesEnabled;
   final LocalStorage _localStorage = sl<LocalStorage>();
 
   @override
   void initState() {
     super.initState();
     _autoNextEnabled = _localStorage.isAutoNextEnabled();
+    _onlyEnglishSubtitlesEnabled = _localStorage.isOnlyEnglishSubtitlesEnabled();
   }
 
   @override
@@ -44,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Playback Preferences Section (Auto Next)
+            // Playback Preferences Section (Auto Next & Subtitles)
             _buildSectionHeader(theme, 'PLAYBACK PREFERENCES'),
             const SizedBox(height: 12),
             Container(
@@ -87,6 +89,52 @@ class _SettingsPageState extends State<SettingsPage> {
                         _autoNextEnabled = value;
                       });
                       await _localStorage.setAutoNextEnabled(value);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: theme.colorScheme.outline),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ONLY LOAD ENGLISH SUBTITLES',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Only load and display English subtitles in the video player.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.secondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Switch.adaptive(
+                    value: _onlyEnglishSubtitlesEnabled,
+                    activeTrackColor: theme.colorScheme.primary,
+                    onChanged: (value) async {
+                      setState(() {
+                        _onlyEnglishSubtitlesEnabled = value;
+                      });
+                      await _localStorage.setOnlyEnglishSubtitlesEnabled(value);
                     },
                   ),
                 ],

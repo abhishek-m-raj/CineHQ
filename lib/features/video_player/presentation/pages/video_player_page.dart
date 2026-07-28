@@ -12,6 +12,7 @@ import '../../../../core/storage/local_storage.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/opensubtitles_service.dart';
 import '../../../../core/network/vidking_scraper.dart';
+import '../../../../core/utils/subtitle_utils.dart';
 import '../../../tv_shows/domain/usecases/get_season_episodes.dart';
 import '../../../tv_shows/domain/usecases/get_tv_show_details.dart';
 import '../cubits/continue_watching_cubit.dart';
@@ -277,7 +278,11 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
     final service = OpenSubtitlesService(sl<Dio>());
     final results = await service.search(imdbId: _cachedImdbId!);
-    return results.map((s) => {
+    final bool onlyEnglish = sl<LocalStorage>().isOnlyEnglishSubtitlesEnabled();
+    final filteredResults = onlyEnglish
+        ? results.where((s) => isEnglishSubtitle(s.language) || isEnglishSubtitle(s.display)).toList()
+        : results;
+    return filteredResults.map((s) => {
       'id': s.id,
       'display': s.display,
       'language': s.language,
@@ -334,11 +339,17 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       final sources = sourcesList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       final subtitles = subtitlesList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
 
+      final bool onlyEnglish = sl<LocalStorage>().isOnlyEnglishSubtitlesEnabled();
+
       List<VidTrack> tracks = [];
       for (final sub in subtitles) {
         final fileUrl = (sub['file'] ?? sub['url'] ?? '').toString();
         final label = (sub['label'] ?? sub['lang'] ?? 'Unknown').toString();
+        final lang = (sub['lang'] ?? sub['label'] ?? '').toString();
         if (fileUrl.isNotEmpty) {
+          if (onlyEnglish && !isEnglishSubtitle(label, url: fileUrl) && !isEnglishSubtitle(lang, url: fileUrl)) {
+            continue;
+          }
           tracks.add(
             VidTrack(
               type: VidTrackType.caption,
@@ -347,6 +358,56 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               headers: _playerHeaders,
             ),
           );
+        }
+      }
+
+      // Fallback 1: If onlyEnglish is enabled and no English subtitles were found from scraper,
+      // search OpenSubtitles automatically for an English subtitle.
+      if (onlyEnglish && tracks.isEmpty) {
+        try {
+          final openSubResults = await _searchSubtitles('');
+          final englishSubs = openSubResults.where((s) {
+            final lang = (s['language'] ?? '').toString();
+            final display = (s['display'] ?? '').toString();
+            return isEnglishSubtitle(lang) || isEnglishSubtitle(display);
+          }).toList();
+
+          if (englishSubs.isNotEmpty) {
+            englishSubs.sort((a, b) => ((b['downloadCount'] as int?) ?? 0).compareTo((a['downloadCount'] as int?) ?? 0));
+            final bestSub = englishSubs.first;
+            final subUrl = (bestSub['url'] ?? '').toString();
+            if (subUrl.isNotEmpty) {
+              tracks.add(
+                VidTrack(
+                  type: VidTrackType.caption,
+                  label: (bestSub['display'] ?? 'English').toString(),
+                  url: subUrl,
+                  headers: _playerHeaders,
+                ),
+              );
+            }
+          }
+        } catch (_) {
+          // OpenSubtitles fallback silent catch
+        }
+      }
+
+      // Fallback 2: If still no tracks found, load all available scraper subtitles
+      // so the user is never left without subtitles if subtitles exist.
+      if (tracks.isEmpty) {
+        for (final sub in subtitles) {
+          final fileUrl = (sub['file'] ?? sub['url'] ?? '').toString();
+          final label = (sub['label'] ?? sub['lang'] ?? 'Unknown').toString();
+          if (fileUrl.isNotEmpty) {
+            tracks.add(
+              VidTrack(
+                type: VidTrackType.caption,
+                label: label,
+                url: fileUrl,
+                headers: _playerHeaders,
+              ),
+            );
+          }
         }
       }
 
