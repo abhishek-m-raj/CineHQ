@@ -1,4 +1,3 @@
-import 'package:auto_orientation/auto_orientation.dart';
 import 'package:device/device.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
@@ -34,9 +33,6 @@ class ScreenManager {
     try {
       await SystemChrome.setPreferredOrientations(orientations);
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: overlays);
-      if (Device.isIOS) {
-        AutoOrientation.portraitAutoMode();
-      }
     } catch (e) {
       log.e("Error setting default overlays and orientations: $e");
     }
@@ -83,9 +79,12 @@ class ScreenManager {
   Future<void> setFullScreenOverlaysAndOrientations({bool hideOverLays = true}) async {
     try {
       if (forceLandScapeInFullscreen) {
-        AutoOrientation.landscapeAutoMode(forceSensor: true);
+        await SystemChrome.setPreferredOrientations([
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
       } else {
-        AutoOrientation.fullAutoMode();
+        await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
       }
 
       if (hideOverLays) {

@@ -1,5 +1,5 @@
 name: cinehq
-description: "A new Flutter project."
+description: "A movie streaming app."
 workspace:
   - packages/device
   - packages/cineui
@@ -16,7 +16,6 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # A version number is three numbers separated by dots, like 1.2.43
 # followed by an optional build number separated by a +.
 # Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
 # In Android, build-name is used as versionName while build-number used as versionCode.
 # Read more about Android versioning at https://developer.android.com/studio/publish/versioning
 # In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
@@ -64,7 +63,6 @@ dependencies:
   volume_controller: ^3.4.0
   animated_visibility: ^0.0.4
   locale_names: ^1.1.1
-  auto_orientation: ^2.0.1
   window_manager: ^0.5.2
   fullscreen_window: ^1.0.1
   wakelock_plus: ^1.1.4
@@ -199,7 +197,8 @@ flutter_native_splash:
 inno_bundle:
   id: eb7ef8c3-1bdb-4baa-89c9-3e591a23b3c1
   name: CineHQ
-  description: "A new Flutter project."
+  description: "A movie streaming app."
   publisher: cinehq
-  arch: x64
-  admin: auto
+  languages:
+    - english
+  installer_icon: assets/logo.ico

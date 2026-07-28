@@ -25,7 +25,6 @@ dependencies:
   animated_visibility: ^0.0.4
   http: ^1.2.2
   locale_names: ^1.1.1
-  auto_orientation: ^2.0.1
   window_manager: ^0.5.2
   fullscreen_window: ^1.0.1
   wakelock_plus: ^1.1.4

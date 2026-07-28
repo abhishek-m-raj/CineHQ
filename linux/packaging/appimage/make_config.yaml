@@ -1,0 +1,15 @@
+name: cinehq
+package_name: cinehq
+display_name: CineHQ
+icon: linux/packaging/cinehq.png
+generic_name: Movie and Series Streaming App
+startup_notify: true
+
+categories:
+  - AudioVideo
+  - Network
+
+keywords:
+  - Movie
+  - Streaming
+  - Video

@@ -1,4 +1,4 @@
-name: Build and Release WeebHQ
+name: Build and Release CineHQ
 
 on:
   push:
@@ -127,29 +127,29 @@ jobs:
           flutter build apk --release
 
           cd build/app/outputs/flutter-apk
-          mv app-armeabi-v7a-release.apk WeebHQ-Android-armeabi-v7a.apk
-          mv app-arm64-v8a-release.apk WeebHQ-Android-arm64-v8a.apk
-          mv app-x86_64-release.apk WeebHQ-Android-x86_64.apk
-          mv app-release.apk WeebHQ-Android-universal.apk
+          mv app-armeabi-v7a-release.apk CineHQ-Android-armeabi-v7a.apk
+          mv app-arm64-v8a-release.apk CineHQ-Android-arm64-v8a.apk
+          mv app-x86_64-release.apk CineHQ-Android-x86_64.apk
+          mv app-release.apk CineHQ-Android-universal.apk
 
           cd "$GITHUB_WORKSPACE"
           flutter build appbundle --release
 
           cd build/app/outputs/bundle/release
-          mv app-release.aab WeebHQ-Android.aab
+          mv app-release.aab CineHQ-Android.aab
 
       - uses: actions/upload-artifact@v4
         with:
           name: android-all
           path: |
-            build/app/outputs/flutter-apk/WeebHQ-Android-*.apk
-            build/app/outputs/bundle/release/WeebHQ-Android.aab
+            build/app/outputs/flutter-apk/CineHQ-Android-*.apk
+            build/app/outputs/bundle/release/CineHQ-Android.aab
       - name: Release Android Builds
         uses: ncipollo/release-action@v1
         with:
           artifacts: |
-            build/app/outputs/flutter-apk/WeebHQ-Android-*.apk
-            build/app/outputs/bundle/release/WeebHQ-Android.aab
+            build/app/outputs/flutter-apk/CineHQ-Android-*.apk
+            build/app/outputs/bundle/release/CineHQ-Android.aab
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: true
           tag: ${{ github.ref_name }}
@@ -215,28 +215,28 @@ jobs:
 
       - name: Collect artifacts
         run: |
-          find dist -name "*.deb" | head -1 | xargs -I{} cp {} WeebHQ-Linux.deb
-          find dist -name "*.AppImage" | head -1 | xargs -I{} cp {} WeebHQ-Linux.AppImage
-          find dist -name "*.pacman" | head -1 | xargs -I{} cp {} WeebHQ-Linux.pacman
-          find dist ~/rpmbuild/RPMS -name "*.rpm" 2>/dev/null | head -1 | xargs -I{} cp {} WeebHQ-Linux.rpm
+          find dist -name "*.deb" | head -1 | xargs -I{} cp {} CineHQ-Linux.deb
+          find dist -name "*.AppImage" | head -1 | xargs -I{} cp {} CineHQ-Linux.AppImage
+          find dist -name "*.pacman" | head -1 | xargs -I{} cp {} CineHQ-Linux.pacman
+          find dist ~/rpmbuild/RPMS -name "*.rpm" 2>/dev/null | head -1 | xargs -I{} cp {} CineHQ-Linux.rpm
 
       - uses: actions/upload-artifact@v4
         with:
           name: linux-all
           path: |
-            WeebHQ-Linux.deb
-            WeebHQ-Linux.AppImage
-            WeebHQ-Linux.pacman
-            WeebHQ-Linux.rpm
+            CineHQ-Linux.deb
+            CineHQ-Linux.AppImage
+            CineHQ-Linux.pacman
+            CineHQ-Linux.rpm
 
       - name: Release Linux Builds
         uses: ncipollo/release-action@v1
         with:
           artifacts: |
-            WeebHQ-Linux.deb,
-            WeebHQ-Linux.AppImage,
-            WeebHQ-Linux.pacman,
-            WeebHQ-Linux.rpm
+            CineHQ-Linux.deb,
+            CineHQ-Linux.AppImage,
+            CineHQ-Linux.pacman,
+            CineHQ-Linux.rpm
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: true
           tag: ${{ github.ref_name }}
@@ -298,23 +298,23 @@ jobs:
       - name: Create ZIP file for Windows Build
         run: |
           cd build/windows/x64/runner/Release
-          Compress-Archive -Path * -DestinationPath WeebHQ-Windows.zip
+          Compress-Archive -Path * -DestinationPath CineHQ-Windows.zip
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifacts
           path: |
-            build/windows/x64/runner/Release/WeebHQ-Windows.zip
-            build/windows/x64/installer/Release/WeebHQ-x86_64-*-Installer.exe
+            build/windows/x64/runner/Release/CineHQ-Windows.zip
+            build/windows/x64/installer/Release/CineHQ-x86_64-*-Installer.exe
           if-no-files-found: error
 
       - name: Release Windows Builds
         uses: ncipollo/release-action@v1
         with:
           artifacts: |
-            build/windows/x64/runner/Release/WeebHQ-Windows.zip,
-            build/windows/x64/installer/Release/WeebHQ-x86_64-*-Installer.exe
+            build/windows/x64/runner/Release/CineHQ-Windows.zip,
+            build/windows/x64/installer/Release/CineHQ-x86_64-*-Installer.exe
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: true
           tag: ${{ github.ref_name }}

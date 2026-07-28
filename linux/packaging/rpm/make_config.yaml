@@ -1,0 +1,33 @@
+name: cinehq
+package_name: cinehq
+display_name: CineHQ
+icon: linux/packaging/cinehq.png
+generic_name: Movie and Series Streaming App
+summary: Movie and Series Streaming App
+description: Movie and Series Streaming App
+
+keywords:
+  - Streaming
+  - Video
+categories:
+  - AudioVideo
+  - Network
+
+license: Proprietary
+startup_notify: true
+requires:
+  - mpv
+  - gtk3
+  - libsecret
+  - jsoncpp
+  - xdg-utils
+  - libXScrnSaver
+  - libunwind
+  - libcanberra-gtk3
+  - pulseaudio-libs
+
+group: Applications/Multimedia
+vendor: CineHQ
+packager: Vinsmoke Sanji
+packagerEmail: sanji@baratie.com
+url: https://github.com/abhishek-m-raj/CineHQ
