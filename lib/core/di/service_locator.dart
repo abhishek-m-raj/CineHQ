@@ -6,6 +6,7 @@ import 'package:talker_flutter/talker_flutter.dart';
 import '../storage/local_storage.dart';
 import '../network/api_client.dart';
 import '../network/vidking_scraper.dart';
+import '../services/upgrader/upgrader.dart';
 
 // Movie Feature
 import '../../features/movies/data/datasources/movie_remote_data_source.dart';
@@ -55,6 +56,7 @@ Future<void> init() async {
   sl.registerLazySingleton<LocalStorage>(() => LocalStorage(sl()));
   sl.registerLazySingleton<ApiClient>(() => ApiClient(sl(), sl(), sl()));
   sl.registerLazySingleton<VidkingScraper>(() => VidkingScraper());
+  sl.registerLazySingleton<UpgraderService>(() => UpgraderService(dio: sl(), localStorage: sl(), talker: sl()));
 
   // Data Sources
   sl.registerLazySingleton<MovieRemoteDataSource>(

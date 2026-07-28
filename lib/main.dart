@@ -12,6 +12,8 @@ import 'package:video/video.dart';
 import 'package:video_official/video_official.dart';
 import 'package:video_media_kit/video_media_kit.dart';
 
+import 'core/services/upgrader/upgrader.dart';
+
 import 'core/di/service_locator.dart' as di;
 import 'core/di/talker_bloc_observer.dart';
 import 'core/router/app_router.dart';
@@ -72,6 +74,9 @@ void main() async {
 
   // Initialize Dependency Injection container
   await di.init();
+
+  // Initialize Upgrader service
+  await di.sl<UpgraderService>().init();
 
   final talker = di.sl<Talker>();
 

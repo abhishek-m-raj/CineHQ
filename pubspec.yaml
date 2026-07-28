@@ -66,6 +66,12 @@ dependencies:
   window_manager: ^0.5.2
   fullscreen_window: ^1.0.1
   wakelock_plus: ^1.1.4
+  package_info_plus: any
+  pub_semver: ^2.1.4
+  open_file_plus: any
+  permission_handler: ^11.3.1
+  url_launcher: ^6.2.6
+  path_provider: ^2.1.3
   cineui:
     path: packages/cineui
   responsive:

@@ -5,6 +5,7 @@ import 'package:cineui/cineui.dart';
 
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/storage/local_storage.dart';
+import '../../../../core/services/upgrader/upgrader.dart';
 import '../../../video_player/presentation/cubits/continue_watching_cubit.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -239,6 +240,65 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     label: Text(
                       'VIEW LOGS',
+                      style: theme.textTheme.labelLarge?.copyWith(fontSize: 11),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+                      side: BorderSide(color: theme.colorScheme.primary),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // App Updates Section
+            _buildSectionHeader(theme, 'APPLICATION UPDATES'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: theme.colorScheme.outline),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'CHECK FOR UPDATES',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Check if a newer version of CineHQ is available.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.secondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      sl<UpgraderService>().check4updates(true);
+                    },
+                    icon: Icon(
+                      Icons.system_update_outlined,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
+                    label: Text(
+                      'CHECK NOW',
                       style: theme.textTheme.labelLarge?.copyWith(fontSize: 11),
                     ),
                     style: OutlinedButton.styleFrom(

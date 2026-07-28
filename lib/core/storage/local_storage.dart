@@ -95,6 +95,20 @@ class LocalStorage {
   Future<void> setDefaultResolution(String resolution) async {
     await _prefs.setString(_defaultResolutionKey, resolution);
   }
+
+  static const _lastInstalledVersionKey = 'last_installed_version';
+
+  String? getLastInstalledVersion() {
+    return _prefs.getString(_lastInstalledVersionKey);
+  }
+
+  Future<void> saveLastInstalledVersion(String version) async {
+    await _prefs.setString(_lastInstalledVersionKey, version);
+  }
+
+  Future<void> clearAllData() async {
+    await _prefs.clear();
+  }
 }
 
 
