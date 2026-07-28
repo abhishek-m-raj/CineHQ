@@ -63,8 +63,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   StreamSubscription<dynamic>? _errorSub;
   bool _isAutoAdvancing = false;
   int? _lastSavedSecond;
-  String? _resumedTimeText;
-  Timer? _resumedBannerTimer;
 
 
   String _formatYear(String dateStr) {
@@ -497,7 +495,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         if (isSameEpisode) {
           final targetDuration = Duration(seconds: savedItem.positionInSeconds);
           await vidController.player.seek(targetDuration);
-          _showResumedBanner(savedItem.formattedPosition.split(' / ').first);
         }
       }
 
@@ -538,24 +535,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
   }
 
-  void _showResumedBanner(String formattedTime) {
-    if (!mounted) return;
-    _resumedBannerTimer?.cancel();
-    setState(() {
-      _resumedTimeText = formattedTime;
-    });
-    _resumedBannerTimer = Timer(const Duration(seconds: 4), () {
-      if (mounted) {
-        setState(() {
-          _resumedTimeText = null;
-        });
-      }
-    });
-  }
-
   @override
   void dispose() {
-    _resumedBannerTimer?.cancel();
     _saveCurrentProgress();
     _positionSub?.cancel();
     _completedSub?.cancel();
@@ -589,59 +570,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 ),
               ),
             ),
-            if (_resumedTimeText != null)
-              Positioned(
-                top: 40,
-                left: 20,
-                right: 20,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.6), width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.history, color: theme.colorScheme.primary, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Resumed from $_resumedTimeText',
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: () {
-                            vidController.player.seek(Duration.zero);
-                            setState(() => _resumedTimeText = null);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.5)),
-                            ),
-                            child: Text(
-                              'Start Over',
-                              style: TextStyle(color: theme.colorScheme.primary, fontSize: 11, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+
 
             if (_errorMessage != null)
               Container(
