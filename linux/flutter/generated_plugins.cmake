@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   fullscreen_window
   media_kit_libs_linux
   media_kit_video
+  open_file_linux
   screen_retriever_linux
   url_launcher_linux
   volume_controller
