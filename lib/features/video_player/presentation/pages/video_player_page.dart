@@ -290,24 +290,43 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       );
     }
 
-    if (_cachedImdbId == null) return [];
+    final String searchId = _cachedImdbId ?? widget.tmdbId.toString();
 
     final service = OpenSubtitlesService(sl<Dio>());
-    final results = await service.search(imdbId: _cachedImdbId!);
-    final bool onlyEnglish = sl<LocalStorage>().isOnlyEnglishSubtitlesEnabled();
-    final filteredResults = onlyEnglish
-        ? results
-              .where(
-                (s) =>
-                    isEnglishSubtitle(s.language) ||
-                    isEnglishSubtitle(s.display),
-              )
-              .toList()
-        : results;
+    var results = await service.search(
+      id: searchId,
+      season: widget.mediaType == 'tv' ? _currentSeason : null,
+      episode: widget.mediaType == 'tv' ? _currentEpisode : null,
+    );
+
+    if (results.isEmpty && _cachedImdbId != null) {
+      results = await service.search(
+        id: widget.tmdbId.toString(),
+        season: widget.mediaType == 'tv' ? _currentSeason : null,
+        episode: widget.mediaType == 'tv' ? _currentEpisode : null,
+      );
+    }
+
+    var filteredResults = results;
+
+    final trimmedQuery = query.trim().toLowerCase();
+    final titleLower = widget.title.trim().toLowerCase();
+
+    if (trimmedQuery.isNotEmpty &&
+        !trimmedQuery.contains(titleLower) &&
+        !titleLower.contains(trimmedQuery)) {
+      final queryWords = trimmedQuery.split(RegExp(r'\s+'));
+      filteredResults = filteredResults.where((s) {
+        final targetText =
+            '${s.display} ${s.language} ${s.release} ${s.format} ${s.origin}'.toLowerCase();
+        return queryWords.every((word) => targetText.contains(word));
+      }).toList();
+    }
+
     return filteredResults
         .map(
           (s) => {
-            'id': s.id,
+            'id': s.url.isNotEmpty ? s.url : s.id,
             'display': s.display,
             'language': s.language,
             'format': s.format,

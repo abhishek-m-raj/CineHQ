@@ -1,5 +1,5 @@
+import 'package:cineui/cineui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:locale_names/locale_names.dart';
 import 'package:video/other/responsive.dart';
 import 'package:video/utils/language.dart';
@@ -23,7 +23,6 @@ class _SettingsSubtitlePageState extends State<SettingsSubtitlePage> {
   bool _isLoading = false;
   String? _error;
   final _searchController = TextEditingController();
-  final _searchFocusNode = FocusNode();
 
   String get _defaultQuery {
     final title = widget.controller.datasource?.title ?? '';
@@ -36,16 +35,12 @@ class _SettingsSubtitlePageState extends State<SettingsSubtitlePage> {
   @override
   void dispose() {
     _searchController.dispose();
-    _searchFocusNode.dispose();
     super.dispose();
   }
 
   void _enterSearch() {
     _searchController.text = _defaultQuery;
     setState(() => _isSearching = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _searchFocusNode.requestFocus();
-    });
     if (_searchController.text.isNotEmpty) _search();
   }
 
@@ -60,7 +55,7 @@ class _SettingsSubtitlePageState extends State<SettingsSubtitlePage> {
 
   Future<void> _search() async {
     final query = _searchController.text.trim();
-    if (query.isEmpty || widget.controller.onSearchSubtitles == null) return;
+    if (widget.controller.onSearchSubtitles == null) return;
 
     setState(() {
       _isLoading = true;
@@ -172,25 +167,12 @@ class _SettingsSubtitlePageState extends State<SettingsSubtitlePage> {
         HqListTile(leading: const Icon(Icons.arrow_back), title: '', onPress: _exitSearch),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: HqSpacing.s2),
-          child: TextField(
+          child: CineTextField(
             controller: _searchController,
-            focusNode: _searchFocusNode,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-            decoration: InputDecoration(
-              hintText: 'Search subtitles...',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
-              prefixIcon: const Icon(Icons.search, color: Colors.white54, size: 20),
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: HqSpacing.s3, vertical: HqSpacing.s2),
-              filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.08),
-              border: OutlineInputBorder(
-                borderRadius: HqBorderRadius.br2.asRadius,
-                borderSide: BorderSide.none,
-              ),
-            ),
-            inputFormatters: [LengthLimitingTextInputFormatter(100)],
-            onSubmitted: (_) => _search(),
+            hintText: 'Search subtitles...',
+            icon: CineIcons.search,
+            textInputAction: TextInputAction.search,
+            onChange: (_) => _search(),
           ),
         ),
         SizedBox(height: HqSpacing.s2),

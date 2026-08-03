@@ -30,7 +30,7 @@ class OpenSubtitlesSubtitle {
 
 class OpenSubtitlesService {
   final Dio _dio;
-  static const _baseUrl = 'https://subs.videasy.to';
+  static const _baseUrl = 'https://subs.bright67.online';
 
   OpenSubtitlesService([Dio? dio]) : _dio = dio ?? Dio();
 
@@ -51,36 +51,55 @@ class OpenSubtitlesService {
     }
   }
 
-  Future<List<OpenSubtitlesSubtitle>> search({required String imdbId}) async {
+  Future<List<OpenSubtitlesSubtitle>> search({
+    required String id,
+    int? season,
+    int? episode,
+  }) async {
+    final queryParams = <String, dynamic>{'id': id};
+    if (season != null) queryParams['season'] = season;
+    if (episode != null) queryParams['episode'] = episode;
+
     final response = await _dio.get<List>(
       '$_baseUrl/search',
-      queryParameters: {'id': imdbId},
+      queryParameters: queryParams,
       options: Options(headers: {'Accept': 'application/json'}),
     );
 
     final data = response.data ?? [];
     return data
         .map((e) => OpenSubtitlesSubtitle(
-              id: e['id'] ?? '',
-              display: e['display'] ?? '',
-              language: e['language'] ?? '',
-              format: e['format'] ?? '',
-              release: e['release'] ?? '',
-              url: e['url'] ?? '',
+              id: (e['id'] ?? '').toString(),
+              display: (e['display'] ?? '').toString(),
+              language: (e['language'] ?? '').toString(),
+              format: (e['format'] ?? '').toString(),
+              release: (e['release'] ?? e['fileName'] ?? '').toString(),
+              url: (e['url'] ?? e['r2Url'] ?? '').toString(),
               downloadCount: e['downloadCount'] ?? 0,
               isHearingImpaired: e['isHearingImpaired'] ?? false,
               isTrusted: e['isTrusted'] ?? false,
-              origin: e['origin'] ?? '',
+              origin: (e['origin'] ?? '').toString(),
               flagUrl: e['flagUrl'],
             ))
         .toList();
   }
 
-  Future<String?> downloadSubtitle(String subtitleId) async {
+  Future<String?> downloadSubtitle(String subtitleIdOrUrl) async {
     try {
+      final String downloadUrl;
+      final Map<String, dynamic>? queryParams;
+      if (subtitleIdOrUrl.startsWith('http://') ||
+          subtitleIdOrUrl.startsWith('https://')) {
+        downloadUrl = subtitleIdOrUrl;
+        queryParams = null;
+      } else {
+        downloadUrl = '$_baseUrl/download';
+        queryParams = {'id': subtitleIdOrUrl};
+      }
+
       final response = await _dio.get<String>(
-        '$_baseUrl/download',
-        queryParameters: {'id': subtitleId},
+        downloadUrl,
+        queryParameters: queryParams,
         options: Options(
           responseType: ResponseType.plain,
           headers: {'Accept': 'text/plain'},

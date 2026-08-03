@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  cineui:
+    path: ../cineui
   device:
     path: ../device
   responsive:
