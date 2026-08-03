@@ -17,7 +17,6 @@ import '../../../tv_shows/domain/usecases/get_season_episodes.dart';
 import '../../../tv_shows/domain/usecases/get_tv_show_details.dart';
 import '../cubits/continue_watching_cubit.dart';
 
-
 class VideoPlayerPage extends StatefulWidget {
   final int tmdbId;
   final String title;
@@ -64,7 +63,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   bool _isAutoAdvancing = false;
   int? _lastSavedSecond;
 
-
   String _formatYear(String dateStr) {
     if (dateStr.isEmpty) return '';
     final parts = dateStr.split('-');
@@ -93,9 +91,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     _currentSeason = widget.seasonId ?? 1;
     _currentEpisode = widget.episodeId ?? 1;
 
-    vidController = Controller(
-      player: Video.createPlayer(),
-    );
+    vidController = Controller(player: Video.createPlayer());
 
     vidController.setOnBack(() {
       if (mounted) {
@@ -107,7 +103,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     vidController.onDownloadSubtitle = _downloadSubtitle;
 
     _completedSub = vidController.streams.onCompleted.listen((completed) {
-      if (completed && mounted && widget.mediaType == 'tv' && !_isAutoAdvancing) {
+      if (completed &&
+          mounted &&
+          widget.mediaType == 'tv' &&
+          !_isAutoAdvancing) {
         if (sl<LocalStorage>().isAutoNextEnabled()) {
           _playNextEpisode();
         }
@@ -149,10 +148,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
     try {
       final nextEpisode = _currentEpisode + 1;
-      final totalEpisodesInCurrentSeason = vidController.episodeData?.episodes.length ?? 0;
+      final totalEpisodesInCurrentSeason =
+          vidController.episodeData?.episodes.length ?? 0;
       final totalSeasons = vidController.episodeData?.totalSeasons ?? 1;
 
-      if (totalEpisodesInCurrentSeason > 0 && nextEpisode <= totalEpisodesInCurrentSeason) {
+      if (totalEpisodesInCurrentSeason > 0 &&
+          nextEpisode <= totalEpisodesInCurrentSeason) {
         _switchEpisode(_currentSeason, nextEpisode);
       } else if (_currentSeason < totalSeasons) {
         final nextSeason = _currentSeason + 1;
@@ -185,48 +186,63 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   Future<void> _loadTVShowEpisodes(int seasonNum) async {
     if (vidController.episodeData != null) {
-      vidController.setEpisodeData(EpisodeData(
-        playingSeason: _currentSeason,
-        playingEpisode: _currentEpisode,
-        selectedSeason: seasonNum,
-        totalSeasons: vidController.episodeData!.totalSeasons,
-        episodes: vidController.episodeData!.episodes,
-        isLoadingEpisodes: true,
-        onSelectSeason: (s) => _loadTVShowEpisodes(s),
-        onSelectEpisode: (s, e) => _switchEpisode(s, e),
-      ));
-    }
-    try {
-      final tvDetail = await sl<GetTVShowDetails>().call(widget.tmdbId);
-      final episodes = await sl<GetSeasonEpisodes>().call(widget.tmdbId, seasonNum);
-
-      final episodeItems = episodes.map((e) => EpisodeItem(
-        episodeNumber: e.episodeNumber,
-        name: e.name,
-        overview: e.overview,
-        stillPath: e.fullStillPath.isNotEmpty ? e.fullStillPath : _getCoverImageUrl(),
-        airDate: e.airDate,
-        runtime: e.runtime,
-        voteAverage: e.voteAverage,
-      )).toList();
-
-      if (mounted) {
-        vidController.setEpisodeData(EpisodeData(
+      vidController.setEpisodeData(
+        EpisodeData(
           playingSeason: _currentSeason,
           playingEpisode: _currentEpisode,
           selectedSeason: seasonNum,
-          totalSeasons: tvDetail.numberOfSeasons ?? 1,
-          episodes: episodeItems,
-          isLoadingEpisodes: false,
+          totalSeasons: vidController.episodeData!.totalSeasons,
+          episodes: vidController.episodeData!.episodes,
+          isLoadingEpisodes: true,
           onSelectSeason: (s) => _loadTVShowEpisodes(s),
           onSelectEpisode: (s, e) => _switchEpisode(s, e),
-        ));
+        ),
+      );
+    }
+    try {
+      final tvDetail = await sl<GetTVShowDetails>().call(widget.tmdbId);
+      final episodes = await sl<GetSeasonEpisodes>().call(
+        widget.tmdbId,
+        seasonNum,
+      );
+
+      final episodeItems = episodes
+          .map(
+            (e) => EpisodeItem(
+              episodeNumber: e.episodeNumber,
+              name: e.name,
+              overview: e.overview,
+              stillPath: e.fullStillPath.isNotEmpty
+                  ? e.fullStillPath
+                  : _getCoverImageUrl(),
+              airDate: e.airDate,
+              runtime: e.runtime,
+              voteAverage: e.voteAverage,
+            ),
+          )
+          .toList();
+
+      if (mounted) {
+        vidController.setEpisodeData(
+          EpisodeData(
+            playingSeason: _currentSeason,
+            playingEpisode: _currentEpisode,
+            selectedSeason: seasonNum,
+            totalSeasons: tvDetail.numberOfSeasons ?? 1,
+            episodes: episodeItems,
+            isLoadingEpisodes: false,
+            onSelectSeason: (s) => _loadTVShowEpisodes(s),
+            onSelectEpisode: (s, e) => _switchEpisode(s, e),
+          ),
+        );
       }
     } catch (_) {}
   }
 
   void _switchEpisode(int season, int episode) {
-    if (_currentSeason == season && _currentEpisode == episode && vidController.player.state.playing) {
+    if (_currentSeason == season &&
+        _currentEpisode == episode &&
+        vidController.player.state.playing) {
       return;
     }
     _saveCurrentProgress();
@@ -236,16 +252,18 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     });
 
     if (vidController.episodeData != null) {
-      vidController.setEpisodeData(EpisodeData(
-        playingSeason: season,
-        playingEpisode: episode,
-        selectedSeason: vidController.episodeData!.selectedSeason,
-        totalSeasons: vidController.episodeData!.totalSeasons,
-        episodes: vidController.episodeData!.episodes,
-        isLoadingEpisodes: vidController.episodeData!.isLoadingEpisodes,
-        onSelectSeason: vidController.episodeData!.onSelectSeason,
-        onSelectEpisode: vidController.episodeData!.onSelectEpisode,
-      ));
+      vidController.setEpisodeData(
+        EpisodeData(
+          playingSeason: season,
+          playingEpisode: episode,
+          selectedSeason: vidController.episodeData!.selectedSeason,
+          totalSeasons: vidController.episodeData!.totalSeasons,
+          episodes: vidController.episodeData!.episodes,
+          isLoadingEpisodes: vidController.episodeData!.isLoadingEpisodes,
+          onSelectSeason: vidController.episodeData!.onSelectSeason,
+          onSelectEpisode: vidController.episodeData!.onSelectEpisode,
+        ),
+      );
     }
 
     vidController.setVideoInfo(
@@ -278,21 +296,31 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     final results = await service.search(imdbId: _cachedImdbId!);
     final bool onlyEnglish = sl<LocalStorage>().isOnlyEnglishSubtitlesEnabled();
     final filteredResults = onlyEnglish
-        ? results.where((s) => isEnglishSubtitle(s.language) || isEnglishSubtitle(s.display)).toList()
+        ? results
+              .where(
+                (s) =>
+                    isEnglishSubtitle(s.language) ||
+                    isEnglishSubtitle(s.display),
+              )
+              .toList()
         : results;
-    return filteredResults.map((s) => {
-      'id': s.id,
-      'display': s.display,
-      'language': s.language,
-      'format': s.format,
-      'release': s.release,
-      'url': s.url,
-      'downloadCount': s.downloadCount,
-      'isHearingImpaired': s.isHearingImpaired,
-      'isTrusted': s.isTrusted,
-      'origin': s.origin,
-      'flagUrl': s.flagUrl,
-    }).toList();
+    return filteredResults
+        .map(
+          (s) => {
+            'id': s.id,
+            'display': s.display,
+            'language': s.language,
+            'format': s.format,
+            'release': s.release,
+            'url': s.url,
+            'downloadCount': s.downloadCount,
+            'isHearingImpaired': s.isHearingImpaired,
+            'isTrusted': s.isTrusted,
+            'origin': s.origin,
+            'flagUrl': s.flagUrl,
+          },
+        )
+        .toList();
   }
 
   Future<String?> _downloadSubtitle(String subtitleId) async {
@@ -334,10 +362,15 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         throw Exception("No video streams found for this title.");
       }
 
-      final sources = sourcesList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-      final subtitles = subtitlesList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      final sources = sourcesList
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      final subtitles = subtitlesList
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
 
-      final bool onlyEnglish = sl<LocalStorage>().isOnlyEnglishSubtitlesEnabled();
+      final bool onlyEnglish = sl<LocalStorage>()
+          .isOnlyEnglishSubtitlesEnabled();
 
       List<VidTrack> tracks = [];
       for (final sub in subtitles) {
@@ -345,7 +378,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         final label = (sub['label'] ?? sub['lang'] ?? 'Unknown').toString();
         final lang = (sub['lang'] ?? sub['label'] ?? '').toString();
         if (fileUrl.isNotEmpty) {
-          if (onlyEnglish && !isEnglishSubtitle(label, url: fileUrl) && !isEnglishSubtitle(lang, url: fileUrl)) {
+          if (onlyEnglish &&
+              !isEnglishSubtitle(label, url: fileUrl) &&
+              !isEnglishSubtitle(lang, url: fileUrl)) {
             continue;
           }
           tracks.add(
@@ -371,7 +406,11 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           }).toList();
 
           if (englishSubs.isNotEmpty) {
-            englishSubs.sort((a, b) => ((b['downloadCount'] as int?) ?? 0).compareTo((a['downloadCount'] as int?) ?? 0));
+            englishSubs.sort(
+              (a, b) => ((b['downloadCount'] as int?) ?? 0).compareTo(
+                (a['downloadCount'] as int?) ?? 0,
+              ),
+            );
             final bestSub = englishSubs.first;
             final subUrl = (bestSub['url'] ?? '').toString();
             if (subUrl.isNotEmpty) {
@@ -432,7 +471,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         targetRes = int.tryParse(preferredRes.replaceAll(RegExp(r'\D'), ''));
       }
 
-      final sortedKeys = qualityMap.keys.toList()..sort((a, b) => b.compareTo(a));
+      final sortedKeys = qualityMap.keys.toList()
+        ..sort((a, b) => b.compareTo(a));
       if (targetRes != null && sortedKeys.isNotEmpty) {
         int? matchKey;
         if (qualityMap.containsKey(targetRes)) {
@@ -454,10 +494,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       }
 
       Map<int, String> sortedQualityMap = {
-        for (var k in sortedKeys) k: qualityMap[k]!
+        for (var k in sortedKeys) k: qualityMap[k]!,
       };
 
-      final String? coverUrl = (result['thumbnail'] != null && (result['thumbnail'] as String).isNotEmpty)
+      final String? coverUrl =
+          (result['thumbnail'] != null &&
+              (result['thumbnail'] as String).isNotEmpty)
           ? result['thumbnail'] as String
           : _getCoverImageUrl();
 
@@ -488,10 +530,17 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
       await vidController.loadVideo(data: datasource);
 
-      final savedItem = sl<ContinueWatchingCubit>().getItemForShow(widget.tmdbId, widget.mediaType);
-      if (savedItem != null && savedItem.positionInSeconds > 5 && !savedItem.isCompleted) {
-        final isSameEpisode = widget.mediaType == 'movie' ||
-            (savedItem.seasonNumber == _currentSeason && savedItem.episodeNumber == _currentEpisode);
+      final savedItem = sl<ContinueWatchingCubit>().getItemForShow(
+        widget.tmdbId,
+        widget.mediaType,
+      );
+      if (savedItem != null &&
+          savedItem.positionInSeconds > 5 &&
+          !savedItem.isCompleted) {
+        final isSameEpisode =
+            widget.mediaType == 'movie' ||
+            (savedItem.seasonNumber == _currentSeason &&
+                savedItem.episodeNumber == _currentEpisode);
         if (isSameEpisode) {
           final targetDuration = Duration(seconds: savedItem.positionInSeconds);
           await vidController.player.seek(targetDuration);
@@ -517,7 +566,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     final dur = vidController.player.state.duration;
 
     if (dur.inSeconds > 0 && pos.inSeconds > 0) {
-      if (_lastSavedSecond == null || (pos.inSeconds - _lastSavedSecond!).abs() >= 3) {
+      if (_lastSavedSecond == null ||
+          (pos.inSeconds - _lastSavedSecond!).abs() >= 3) {
         _lastSavedSecond = pos.inSeconds;
         sl<ContinueWatchingCubit>().saveProgress(
           tmdbId: widget.tmdbId,
@@ -563,6 +613,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             Center(
               child: VideoPlayer(
                 controller: vidController,
+                fullScreenBtn: !Device.isTv,
                 style: VidStyle(
                   playerMode: Device.isDesktop || Device.isTv
                       ? VidPlayerMode.desktop
@@ -570,7 +621,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 ),
               ),
             ),
-
 
             if (_errorMessage != null)
               Container(
@@ -583,7 +633,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                   ),
                   title: const Text(
                     'Playback Error',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   content: Text(
                     _errorMessage!,
@@ -595,7 +648,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: theme.colorScheme.primary,
                         foregroundColor: theme.colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
